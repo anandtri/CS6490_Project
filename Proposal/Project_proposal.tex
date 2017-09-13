@@ -1,0 +1,35 @@
+\documentclass{article}
+\usepackage[a4paper, total={6in, 9in}]{geometry}
+
+\title{Client Side Web Cloaking Detection}
+\author{
+Anand Tripathi\\
+       atripath@cs.utah.edu
+\and 
+Kirk Webb\\
+       kwebb@cs.utah.edu
+\and
+Anmol Vatsa\\
+       avatsa@cs.utah.edu
+}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Web cloaking refers to the set of techniques that a web server uses to fingerprint incoming visitors in order to customize page content. An example can be, a website serving optimized pages for small screens. However, cloaking is often misused by miscreants to hide the true nature of malicious sites.
+
+Invernizzi et al ~\cite{cloak} measured the prevalence of cloaking on the web as well as its use by attackers to increase their search ranking and hide malicious content being served from web crawlers. The work also proposed a cloaking detection system but it's currently targeted towards search engines and security companies. One interesting insight of the study was that the content of cloaked websites retrieved from the client browser will be different from the one observed with a web crawler.
+
+\section{Proposal}
+The goal of this project is to investigate the possibility of detecting web cloaking on the client side.  Specifically, we would like to build a browser plug-in that detects the use of cloaking by the website to block or alert the user.
+
+We are going to use the aforementioned assumption that cloaked websites will serve different content to browser and web crawler by instantiating a parallel crawler request whenever the browser makes a new request. After retrieving the content from these requests, we can extract relevant content features and do a comparison ~\cite{cloak} on the client-side to identify any major difference.
+
+
+\begin{thebibliography}{1}
+
+  \bibitem{cloak} Invernizzi, Luca, et al. {\em ``Cloak of Visibility: Detecting When Machines Browse A Different Web.''} Security and Privacy (SP), 2016 IEEE Symposium on. IEEE, 2016..
+
+\end{thebibliography}
+
+\end{document}
