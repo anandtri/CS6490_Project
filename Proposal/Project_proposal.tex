@@ -23,8 +23,34 @@ Invernizzi et al ~\cite{cloak} measured the prevalence of cloaking on the web as
 \section{Proposal}
 The goal of this project is to investigate the possibility of detecting web cloaking on the client side.  Specifically, we would like to build a browser plug-in that detects the use of cloaking by the website to block or alert the user.
 
-We are going to use the aforementioned assumption that cloaked websites will serve different content to browser and web crawler by instantiating a parallel crawler request whenever the browser makes a new request. After retrieving the content from these requests, we can extract relevant content features and do a comparison ~\cite{cloak} on the client-side to identify any major difference.
+We are going to use the aforementioned assumption that cloaked websites will serve different content to browser and web crawler by instantiating a parallel crawler request whenever the browser makes a new request. After retrieving the content from these requests, we can extract relevant content features and do a comparison ~\cite{cloak} on the client-side to identify any major differences.
 
+This project will include the following aspects:
+
+\begin{itemize}
+\item Lightweight client-side content classification.
+
+Our goal is to perform cloak detection on demand as a user browses
+without imposing cumbersome delays.  We anticipate that this will
+involve lightweight machine learning techniques.  We will explore
+trade-offs between detection accuracy and performance.
+
+\item Browser plug-in programming.
+
+None of us have prior experience with browser plug-in development, so
+there will be some amount of learning curve.  We expect to study
+example implementations and learn tricks from open source plug-ins.
+
+\item Candidate web page harvesting and evaluation.
+
+We believe that we can acquire reasonable sets of pages to test
+against by surveying URLs contained in spam emails. We will also
+compose some of our own test web pages that attempt to present
+alternate views to web crawlers.  We will run tests from multiple
+vantage points: On machines connecting through commodity home ISPs,
+from University machines, and from commercial cloud VMs.
+
+\end{itemize}  
 
 \begin{thebibliography}{1}
 
