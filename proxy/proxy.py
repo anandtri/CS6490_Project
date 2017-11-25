@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import re
 import httplib
 from urlparse import urlparse
 
@@ -8,6 +9,11 @@ MAXREDIR = 10
 TIMEOUT = 10
 
 CRAWLERAGENT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+
+BODYPATS = [
+    re.compile('window.location.href\s*=\s*["\'](.+?)["\']'),
+    re.compile('window.location\s*=\s*["\'](.+?)["\']'),
+]
 
 class pageFetcher:
     def __init__(self):
@@ -44,9 +50,14 @@ class pageFetcher:
 
         return resp, data
 
-    # XXX: Fill me in.
     def _bodyredir(self, data):
-        return None
+        url = None
+        for pat in BODYPATS:
+            m = pat.search(data)
+            if m:
+                url = m.group(1)
+                break
+        return url
     
     def crawlerfetch(self, url):
         # Setup headers
@@ -57,7 +68,8 @@ class pageFetcher:
         accum = []
         for i in range(MAXREDIR):
             resp, data = self._fetch(url, headers)
-            accum.append((resp, data))
+            resp.redir = None
+            accum.append((url, resp, data))
             if resp.status > 300 and resp.status < 310:
                 url = resp.getheader('location')
                 print "Chasing redirect: %s" % url
@@ -70,12 +82,23 @@ class pageFetcher:
             else:
                 print "Unhandled response code %d: %s" % (resp.status, resp.reason)
                 break
-
+            resp.redir = url
         return accum
 
 if __name__ == "__main__":
     fetcher = pageFetcher()
     url = sys.argv[1];
     print "Fetching %s" % url
-    res = fetcher.crawlerfetch(url)
-    print res
+    chain = fetcher.crawlerfetch(url)
+    print "%d redirects found" % (len(chain) - 1)
+    print "\n"
+    for url,res,data in chain:
+        print "URL: %s" % url
+        print "Code: %d, Reason: %s" % (res.status, res.reason)
+        if res.redir:
+            print "Redir: %s" % res.redir
+        print "Headers: ", res.getheaders()
+        lines = data.split("\n")
+        for line in lines:
+            print line
+        print ""
