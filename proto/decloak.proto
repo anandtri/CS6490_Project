@@ -1,0 +1,36 @@
+//
+// CS6490 Project grpc/protobuf declarations
+//
+
+package decloak;
+
+// Proxy service defs.
+service FetchProxy {
+	// Fetches requested page, following redirects. returns stream of
+	// found pages.
+	rpc fetchPage(FetchURL) returns (stream WebPage) {}
+}
+
+// Arguments message to send to proxy.
+message FetchURL {
+	string URL = 1;  // URL to fetch or return.
+}
+
+// Return pages from proxy fetch operation.
+message WebPage {
+	string URL = 1; // URL of fetched page.
+	int32 status = 2; // Return code from server for thie page.
+	string reason = 3; // Reason string from server.
+	enum RedirectType {
+	     HTTP = 1;  // HTTP redirect (return code 3XX).
+	     BODY = 2;  // body redirect (javascript, etc.).
+	}
+	RedirectType redirtype = 4; // See above.
+	string redirURL = 5; // URL of redirect page (if one exists).
+	message KeyVal {
+		optional string key = 1;
+		optional string val = 2;
+	}
+	repeated KeyVal headers = 6; // All headers as KV list.
+	string body = 7; // Body text of page.
+}
