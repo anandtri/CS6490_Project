@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='decloak.proto',
   package='decloak',
   syntax='proto3',
-  serialized_pb=_b('\n\rdecloak.proto\x12\x07\x64\x65\x63loak\"\x17\n\x08\x46\x65tchURL\x12\x0b\n\x03URL\x18\x01 \x01(\t\"\xfa\x01\n\x07WebPage\x12\x0b\n\x03URL\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x30\n\tredirtype\x18\x04 \x01(\x0e\x32\x1d.decloak.WebPage.RedirectType\x12\x10\n\x08redirURL\x18\x05 \x01(\t\x12(\n\x07headers\x18\x06 \x03(\x0b\x32\x17.decloak.WebPage.KeyVal\x12\x0c\n\x04\x62ody\x18\x07 \x01(\t\x1a\"\n\x06KeyVal\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0b\n\x03val\x18\x02 \x01(\t\"\"\n\x0cRedirectType\x12\x08\n\x04HTTP\x10\x00\x12\x08\n\x04\x42ODY\x10\x01\x32\x42\n\nFetchProxy\x12\x34\n\tfetchPage\x12\x11.decloak.FetchURL\x1a\x10.decloak.WebPage\"\x00\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\rdecloak.proto\x12\x07\x64\x65\x63loak\"\x17\n\x08\x46\x65tchURL\x12\x0b\n\x03URL\x18\x01 \x01(\t\"\x84\x02\n\x07WebPage\x12\x0b\n\x03URL\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x30\n\tredirtype\x18\x04 \x01(\x0e\x32\x1d.decloak.WebPage.RedirectType\x12\x10\n\x08redirURL\x18\x05 \x01(\t\x12(\n\x07headers\x18\x06 \x03(\x0b\x32\x17.decloak.WebPage.KeyVal\x12\x0c\n\x04\x62ody\x18\x07 \x01(\t\x1a\"\n\x06KeyVal\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0b\n\x03val\x18\x02 \x01(\t\",\n\x0cRedirectType\x12\x08\n\x04NONE\x10\x00\x12\x08\n\x04HTTP\x10\x01\x12\x08\n\x04\x42ODY\x10\x02\x32\x42\n\nFetchProxy\x12\x34\n\tfetchPage\x12\x11.decloak.FetchURL\x1a\x10.decloak.WebPage\"\x00\x30\x01\x62\x06proto3')
 )
 
 
@@ -31,18 +31,22 @@ _WEBPAGE_REDIRECTTYPE = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='HTTP', index=0, number=0,
+      name='NONE', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='BODY', index=1, number=1,
+      name='HTTP', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='BODY', index=2, number=2,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
   serialized_start=268,
-  serialized_end=302,
+  serialized_end=312,
 )
 _sym_db.RegisterEnumDescriptor(_WEBPAGE_REDIRECTTYPE)
 
@@ -185,7 +189,7 @@ _WEBPAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=52,
-  serialized_end=302,
+  serialized_end=312,
 )
 
 _WEBPAGE_KEYVAL.containing_type = _WEBPAGE
@@ -226,8 +230,8 @@ _FETCHPROXY = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=304,
-  serialized_end=370,
+  serialized_start=314,
+  serialized_end=380,
   methods=[
   _descriptor.MethodDescriptor(
     name='fetchPage',
