@@ -2,8 +2,20 @@
 
 import sys
 import re
+import time
 import httplib
 from urlparse import urlparse
+from concurrent import futures
+
+import grpc
+
+sys.path.append(os.path.abspath("../proto"))
+import decloak_pb2
+import decloak_pb2_grpc
+
+#
+# Global constants
+#
 
 MAXREDIR = 10
 TIMEOUT = 10
@@ -15,12 +27,38 @@ BODYPATS = [
     re.compile('window.location\s*=\s*["\'](.+?)["\']'),
 ]
 
-class pageFetcher:
-    def __init__(self):
-        pass
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+
+class pageFetcher(decloak_pb2_grpc.FetchProxyServicer):
+
+    def fetchPage(self, request, context):
+        """Fetches requested page, following redirects. returns stream of
+        found pages.
+        """
+        try:
+            chain = self.crawlerfetch(request.URL)
+            for url, res, data in chain:
+                wp = decloak_pb2.WebPage(URL = url, status = res.status,
+                                         reason = res.reason, body = data)
+                if res.redir:
+                    wp.redirURL = res.redir
+                    if res.status == 200:
+                        wp.redirtype = decloak_pb2.WebPage.BODY
+                    else:
+                        wp.redirtype = decloak_pb2.WebPage.HTTP
+                else:
+                    wp.redirtype = decloak_pb2.WebPage.NONE
+                for k,v in res.getheaders():
+                    hdr = wp.headers.add()
+                    hdr.key = k
+                    hdr.val = v
+                yield wp
+        except:
+            # XXX: Handle failed page chain fetch.
+            pass
     
     def _fetch(self, url, headers):
-
         # Parse URL into components
         purl = urlparse(url)
 
@@ -51,6 +89,9 @@ class pageFetcher:
         return resp, data
 
     def _bodyredir(self, data):
+        """Search each defined body pattern, returning the URL from the
+        first match found (if any).
+        """
         url = None
         for pat in BODYPATS:
             m = pat.search(data)
@@ -64,7 +105,7 @@ class pageFetcher:
         headers = {'USER_AGENT': CRAWLERAGENT}
 
         # Dig through redirections.
-        # XXX: Update to handle exceptions and cookies.
+        # XXX: Update to handle cookies.
         accum = []
         for i in range(MAXREDIR):
             resp, data = self._fetch(url, headers)
@@ -74,10 +115,8 @@ class pageFetcher:
                 url = resp.getheader('location')
                 print "Chasing redirect: %s" % url
             elif resp.status == 200:
-                burl = self._bodyredir(data)
-                if burl:
-                    url = burl
-                else:
+                url = self._bodyredir(data)
+                if not url:
                     break
             else:
                 print "Unhandled response code %d: %s" % (resp.status, resp.reason)
@@ -85,20 +124,34 @@ class pageFetcher:
             resp.redir = url
         return accum
 
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    decloak_pb2_grpc.add_FetchProxyServicer_to_server(pageFetcher(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
+    
 if __name__ == "__main__":
-    fetcher = pageFetcher()
-    url = sys.argv[1];
-    print "Fetching %s" % url
-    chain = fetcher.crawlerfetch(url)
-    print "%d redirects found" % (len(chain) - 1)
-    print "\n"
-    for url,res,data in chain:
-        print "URL: %s" % url
-        print "Code: %d, Reason: %s" % (res.status, res.reason)
-        if res.redir:
-            print "Redir: %s" % res.redir
-        print "Headers: ", res.getheaders()
-        lines = data.split("\n")
-        for line in lines:
-            print line
-        print ""
+    if len(sys.argv) < 2:
+        serve()
+    else:
+        fetcher = pageFetcher()
+        url = sys.argv[1];
+        print "Fetching %s" % url
+        chain = fetcher.crawlerfetch(url)
+        print "%d redirects found" % (len(chain) - 1)
+        print "\n"
+        for url,res,data in chain:
+            print "URL: %s" % url
+            print "Code: %d, Reason: %s" % (res.status, res.reason)
+            if res.redir:
+                print "Redir: %s" % res.redir
+            print "Headers: ", res.getheaders()
+            lines = data.split("\n")
+            for line in lines:
+                print line
+            print ""
