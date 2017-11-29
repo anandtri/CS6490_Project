@@ -2,6 +2,8 @@
 
 import os, sys
 
+import grpc
+
 sys.path.append(os.path.abspath("../proto"))
 import decloak_pb2
 import decloak_pb2_grpc
@@ -11,6 +13,7 @@ def fetchurl(url):
     channel = grpc.insecure_channel('localhost:50051')
     stub = decloak_pb2_grpc.FetchProxyStub(channel)
     for res in stub.fetchPage(decloak_pb2.FetchURL(URL=url)):
+	print "===> BASIC INFO <==="
         print "URL: ", res.URL
         print "Code: ", res.status, ", Reason: ", res.reason
         if res.redirtype != decloak_pb2.WebPage.NONE:
@@ -19,12 +22,14 @@ def fetchurl(url):
                 print "Redir type: body"
             else:
                 print "Redir type: http"
-        print "Headers:"
-        for hdr in res.headers.items():
+        print "===> HEADERS <==="
+        for hdr in res.headers:
             print "%s: %s" % (hdr.key, hdr.val)
+	print "===> BODY <==="
         lines = res.body.split("\n")
         for line in lines:
-            print line
+            print line.encode('utf-8')
+	print "==> END PAGE <=="
         print ""
 
 if __name__ == '__main__':
