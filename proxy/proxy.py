@@ -66,8 +66,10 @@ class pageFetcher(decloak_pb2_grpc.FetchProxyServicer):
         conn = None
         if purl.scheme == 'https':
             conn = httplib.HTTPSConnection(purl.netloc, timeout = TIMEOUT)
+            headers['IsSecureConnection'] = 'True'
         else:
             conn = httplib.HTTPConnection(purl.netloc, timeout = TIMEOUT)
+            headers['IsSecureConnection'] = 'False'
 
         # Assemble URL path
         path = purl.path
@@ -102,7 +104,16 @@ class pageFetcher(decloak_pb2_grpc.FetchProxyServicer):
     
     def crawlerfetch(self, url):
         # Setup headers
-        headers = {'USER_AGENT': CRAWLERAGENT}
+        headers = {
+            'Url': url,
+            'Method': 'GET',
+            'IsAuthenticated': 'False',
+            'Connection': 'Keep-alive',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            #'Accept-Encoding': 'gzip,deflate,br',
+            'From': 'googlebot(at)googlebot.com',
+            'User-Agent': CRAWLERAGENT,
+        }
 
         # Dig through redirections.
         # XXX: Update to handle cookies.
