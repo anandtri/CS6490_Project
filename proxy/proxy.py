@@ -118,9 +118,15 @@ class pageFetcher(decloak_pb2_grpc.FetchProxyServicer):
         # Dig through redirections.
         # XXX: Update to handle cookies.
         accum = []
+        lastcookie = None
         for i in range(MAXREDIR):
+            if lastcookie:
+                headers['Cookie'] = lastcookie
+            elif 'Cookie' in headers:
+                del headers['Cookie']
             resp, data = self._fetch(url, headers)
             resp.redir = None
+            lastcookie = resp.getheader('set-cookie')
             accum.append((url, resp, data))
             if resp.status > 300 and resp.status < 310:
                 url = resp.getheader('location')
