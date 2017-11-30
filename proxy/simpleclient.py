@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os, sys
+import argparse
 
 import grpc
 
@@ -10,11 +11,11 @@ import decloak_pb2_grpc
 
 DEFREMPORT = 50051
 
-def fetchurl(url, args):
-    print "Fetching URL from proxy: ", url
+def fetchurl(args):
+    print "Fetching URL from proxy: ", args.url
     channel = grpc.insecure_channel("%s:%d" % (args.remote, args.port))
     stub = decloak_pb2_grpc.FetchProxyStub(channel)
-    for res in stub.fetchPage(decloak_pb2.FetchURL(URL=url)):
+    for res in stub.fetchPage(decloak_pb2.FetchURL(URL=args.url)):
 	print "===> BASIC INFO <==="
         print "URL: ", res.URL
         print "Code: ", res.status, ", Reason: ", res.reason
@@ -37,10 +38,10 @@ def fetchurl(url, args):
 if __name__ == '__main__':
     pr = argparse.ArgumentParser()
     #pr.add_argument("-d", help="Turn on debugging output.", action="store_true")
+    pr.add_argument("url", help="URL to lookup.")
     pr.add_argument("--remote", help="Specify host to connect to. If not specified, connect to localhost.", default='localhost')
     pr.add_argument("--port", help="Specify port for remote host (default: %d)." % DEFREMPORT, default=DEFREMPORT)
 
     # Parse command line and do stuff.
-    args  = pr.parse_args()    
-    url = sys.argv[1]
-    fetchurl(url, args)
+    args  = pr.parse_args()
+    fetchurl(args)
