@@ -37,3 +37,28 @@ message WebPage {
 	repeated KeyVal headers = 6; // All headers as KV list.
 	string body = 7; // Body text of page.
 }
+
+// Response message from Detection module.
+message MlResponse {
+    bool cloaked = 1;   // isCloaked
+	string response = 2;  // Explanation
+	enum ErrorType {
+	    NONE = 0;           // No failures.
+	    PROXY_FAILURE = 1;  // Proxy fetch failed
+	    MODULE_FAILURE = 2; // Exception while handling request
+	}
+	ErrorType Err = 3;
+}
+
+// List of messages from browser
+message ListWebPage {
+    repeated WebPage WebPages = 1;
+
+}
+
+
+// ML service defs.
+service CloakDetector {
+    //Determines if a page is cloaked.
+	rpc isCloaked( ListWebPage ) returns (MlResponse) {}
+}

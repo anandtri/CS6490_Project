@@ -4,29 +4,43 @@ import configparser
 from bs4 import BeautifulSoup
 from collections import Counter
 import sys
+import grpc
+import time
+from enum import Enum
+import os
 from urllib import urlopen
+sys.path.append(os.path.abspath("../proto"))
+import decloak_pb2
+import decloak_pb2_grpc
+from concurrent import futures
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
+
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 NGRAM_SIZE = config.getint("ml_module","ngram_size")
 CONTENT_WEIGHT = config.getfloat("ml_module", "content_weight")
 LINKS_WEIGHT = config.getfloat("ml_module", "links_weight")
 PROXY_ADDRESS = config.get("proxy", "address")
+MY_ADDRESS = config.get("ml_module", "address")
 DETECTION_THRESHOLD = config.getfloat("ml_module", "threshold")
+
+
+# Errors
+class Errors(Enum):
+    PROXY_ERROR = 1
+    NONE = 0
+    ERROR = 2
+
 
 
 class MlModule:
 
-    def __init__(self, web_response=None, proxy_response=None):
-        """
-        TODO: Better Representation
-        :param web_response:
-        :param proxy_response:
-        """
-        self.web_response = web_response
-        self.proxy_response = proxy_response
+    def __init__(self):
+        self.web_response = []
+        self.proxy_response = []
 
     @staticmethod
     def extract_content_feature(html):
@@ -75,37 +89,63 @@ class MlModule:
         jaccard_dist = float(intersection)/float(union)
         return jaccard_dist
 
-    def calc_content_similarity(self):
+    def calc_content_similarity(self, web_response_html, proxy_response_html):
         """
         TODO: Extract html from two responses
 
         :return: Similarity score for content. Jaccard score.
         """
-        web_ngrams, web_links = self.extract_content_feature(self.web_response.body)
-        proxy_ngrams, proxy_links = self.extract_content_feature(self.proxy_response.body)
+        web_ngrams, web_links = self.extract_content_feature(web_response_html)
+        proxy_ngrams, proxy_links = self.extract_content_feature(proxy_response_html)
         text_score = self.cal_jaccard_distance(web_ngrams, proxy_ngrams)
         link_score = self.cal_jaccard_distance(web_links, proxy_links)
         score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
         return score
 
-    def is_cloaked(self):
+    def isCloaked(self, webresponse):
         """
         TODO: Combine result
         :return: True if cloaking detected, false otherwise
         """
+        # Fetching proxy response
+        self.web_response = webresponse
+        result = decloak_pb2.MlResponse()
+        result.cloaked = False
+        result.response = "Success"
+        result.Err = Errors.NONE
+        try:
+            channel = grpc.insecure_channel(PROXY_ADDRESS)
+            stub = decloak_pb2_grpc.FetchProxyStub(channel)
+            for res in stub.fetchPage(decloak_pb2.FetchURL(URL=webresponse[0].url)):
+                self.proxy_response.append(res)
+                print res
+        except:
+            result.Err = Errors.PROXY_ERROR
+            result.response = "Proxy Failure"
+            return result
+        # Content similarity
         content_similarity_score = self.calc_content_similarity()
-        print content_similarity_score
         if content_similarity_score > DETECTION_THRESHOLD:
-            return False
+            result.cloaked = True
+            result.response = "Content Differs"
+            return result
         else:
-            return True
+            return result
 
 
 def serve():
     """
-    TODO : Write RPC server
-    :return:
+    Start RPC server (From proxy.py
     """
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    decloak_pb2_grpc.add_CloakDetectorServicer_to_server(MlModule(), server)
+    server.add_insecure_port(MY_ADDRESS)
+    server.start()
+    try:
+        while True:
+            time.sleep(_ONE_DAY_IN_SECONDS)
+    except KeyboardInterrupt:
+        server.stop(0)
 
 
 if __name__ == "__main__":
@@ -121,11 +161,12 @@ if __name__ == "__main__":
         text_score = classifier.cal_jaccard_distance(url1_ngrams, url2_ngrams)
         link_score = classifier.cal_jaccard_distance(url1_links, url2_links)
 
-    score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
-    print text_score, link_score, score
-    if url1 == url2:
-        assert score >= 0.95, "Different value for same url"
-    else:
-        print url1, url2, "are similar with a score of ", score
+        score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
+        print text_score, link_score, score
+        if url1 == url2:
+            assert score >= 0.95, "Different value for same url"
+        else:
+            print url1, url2, "are similar with a score of ", score
+
 
 

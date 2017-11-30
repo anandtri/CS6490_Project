@@ -45,3 +45,45 @@ def add_FetchProxyServicer_to_server(servicer, server):
   generic_handler = grpc.method_handlers_generic_handler(
       'decloak.FetchProxy', rpc_method_handlers)
   server.add_generic_rpc_handlers((generic_handler,))
+
+
+class CloakDetectorStub(object):
+  """ML service defs.
+  """
+
+  def __init__(self, channel):
+    """Constructor.
+
+    Args:
+      channel: A grpc.Channel.
+    """
+    self.isCloaked = channel.unary_unary(
+        '/decloak.CloakDetector/isCloaked',
+        request_serializer=decloak__pb2.ListWebPage.SerializeToString,
+        response_deserializer=decloak__pb2.MlResponse.FromString,
+        )
+
+
+class CloakDetectorServicer(object):
+  """ML service defs.
+  """
+
+  def isCloaked(self, request, context):
+    """Determines if a page is cloaked.
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+
+def add_CloakDetectorServicer_to_server(servicer, server):
+  rpc_method_handlers = {
+      'isCloaked': grpc.unary_unary_rpc_method_handler(
+          servicer.isCloaked,
+          request_deserializer=decloak__pb2.ListWebPage.FromString,
+          response_serializer=decloak__pb2.MlResponse.SerializeToString,
+      ),
+  }
+  generic_handler = grpc.method_handlers_generic_handler(
+      'decloak.CloakDetector', rpc_method_handlers)
+  server.add_generic_rpc_handlers((generic_handler,))

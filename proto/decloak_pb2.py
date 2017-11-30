@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='decloak.proto',
   package='decloak',
   syntax='proto3',
-  serialized_pb=_b('\n\rdecloak.proto\x12\x07\x64\x65\x63loak\"\x17\n\x08\x46\x65tchURL\x12\x0b\n\x03URL\x18\x01 \x01(\t\"\x84\x02\n\x07WebPage\x12\x0b\n\x03URL\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x30\n\tredirtype\x18\x04 \x01(\x0e\x32\x1d.decloak.WebPage.RedirectType\x12\x10\n\x08redirURL\x18\x05 \x01(\t\x12(\n\x07headers\x18\x06 \x03(\x0b\x32\x17.decloak.WebPage.KeyVal\x12\x0c\n\x04\x62ody\x18\x07 \x01(\t\x1a\"\n\x06KeyVal\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0b\n\x03val\x18\x02 \x01(\t\",\n\x0cRedirectType\x12\x08\n\x04NONE\x10\x00\x12\x08\n\x04HTTP\x10\x01\x12\x08\n\x04\x42ODY\x10\x02\x32\x42\n\nFetchProxy\x12\x34\n\tfetchPage\x12\x11.decloak.FetchURL\x1a\x10.decloak.WebPage\"\x00\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\rdecloak.proto\x12\x07\x64\x65\x63loak\"\x17\n\x08\x46\x65tchURL\x12\x0b\n\x03URL\x18\x01 \x01(\t\"\x84\x02\n\x07WebPage\x12\x0b\n\x03URL\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x30\n\tredirtype\x18\x04 \x01(\x0e\x32\x1d.decloak.WebPage.RedirectType\x12\x10\n\x08redirURL\x18\x05 \x01(\t\x12(\n\x07headers\x18\x06 \x03(\x0b\x32\x17.decloak.WebPage.KeyVal\x12\x0c\n\x04\x62ody\x18\x07 \x01(\t\x1a\"\n\x06KeyVal\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0b\n\x03val\x18\x02 \x01(\t\",\n\x0cRedirectType\x12\x08\n\x04NONE\x10\x00\x12\x08\n\x04HTTP\x10\x01\x12\x08\n\x04\x42ODY\x10\x02\"\x99\x01\n\nMlResponse\x12\x0f\n\x07\x63loaked\x18\x01 \x01(\x08\x12\x10\n\x08response\x18\x02 \x01(\t\x12*\n\x03\x45rr\x18\x03 \x01(\x0e\x32\x1d.decloak.MlResponse.ErrorType\"<\n\tErrorType\x12\x08\n\x04NONE\x10\x00\x12\x11\n\rPROXY_FAILURE\x10\x01\x12\x12\n\x0eMODULE_FAILURE\x10\x02\"1\n\x0bListWebPage\x12\"\n\x08WebPages\x18\x01 \x03(\x0b\x32\x10.decloak.WebPage2B\n\nFetchProxy\x12\x34\n\tfetchPage\x12\x11.decloak.FetchURL\x1a\x10.decloak.WebPage\"\x00\x30\x01\x32I\n\rCloakDetector\x12\x38\n\tisCloaked\x12\x14.decloak.ListWebPage\x1a\x13.decloak.MlResponse\"\x00\x62\x06proto3')
 )
 
 
@@ -49,6 +49,32 @@ _WEBPAGE_REDIRECTTYPE = _descriptor.EnumDescriptor(
   serialized_end=312,
 )
 _sym_db.RegisterEnumDescriptor(_WEBPAGE_REDIRECTTYPE)
+
+_MLRESPONSE_ERRORTYPE = _descriptor.EnumDescriptor(
+  name='ErrorType',
+  full_name='decloak.MlResponse.ErrorType',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='NONE', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='PROXY_FAILURE', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='MODULE_FAILURE', index=2, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=408,
+  serialized_end=468,
+)
+_sym_db.RegisterEnumDescriptor(_MLRESPONSE_ERRORTYPE)
 
 
 _FETCHURL = _descriptor.Descriptor(
@@ -192,12 +218,94 @@ _WEBPAGE = _descriptor.Descriptor(
   serialized_end=312,
 )
 
+
+_MLRESPONSE = _descriptor.Descriptor(
+  name='MlResponse',
+  full_name='decloak.MlResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='cloaked', full_name='decloak.MlResponse.cloaked', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='response', full_name='decloak.MlResponse.response', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='Err', full_name='decloak.MlResponse.Err', index=2,
+      number=3, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _MLRESPONSE_ERRORTYPE,
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=315,
+  serialized_end=468,
+)
+
+
+_LISTWEBPAGE = _descriptor.Descriptor(
+  name='ListWebPage',
+  full_name='decloak.ListWebPage',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='WebPages', full_name='decloak.ListWebPage.WebPages', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=470,
+  serialized_end=519,
+)
+
 _WEBPAGE_KEYVAL.containing_type = _WEBPAGE
 _WEBPAGE.fields_by_name['redirtype'].enum_type = _WEBPAGE_REDIRECTTYPE
 _WEBPAGE.fields_by_name['headers'].message_type = _WEBPAGE_KEYVAL
 _WEBPAGE_REDIRECTTYPE.containing_type = _WEBPAGE
+_MLRESPONSE.fields_by_name['Err'].enum_type = _MLRESPONSE_ERRORTYPE
+_MLRESPONSE_ERRORTYPE.containing_type = _MLRESPONSE
+_LISTWEBPAGE.fields_by_name['WebPages'].message_type = _WEBPAGE
 DESCRIPTOR.message_types_by_name['FetchURL'] = _FETCHURL
 DESCRIPTOR.message_types_by_name['WebPage'] = _WEBPAGE
+DESCRIPTOR.message_types_by_name['MlResponse'] = _MLRESPONSE
+DESCRIPTOR.message_types_by_name['ListWebPage'] = _LISTWEBPAGE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 FetchURL = _reflection.GeneratedProtocolMessageType('FetchURL', (_message.Message,), dict(
@@ -222,6 +330,20 @@ WebPage = _reflection.GeneratedProtocolMessageType('WebPage', (_message.Message,
 _sym_db.RegisterMessage(WebPage)
 _sym_db.RegisterMessage(WebPage.KeyVal)
 
+MlResponse = _reflection.GeneratedProtocolMessageType('MlResponse', (_message.Message,), dict(
+  DESCRIPTOR = _MLRESPONSE,
+  __module__ = 'decloak_pb2'
+  # @@protoc_insertion_point(class_scope:decloak.MlResponse)
+  ))
+_sym_db.RegisterMessage(MlResponse)
+
+ListWebPage = _reflection.GeneratedProtocolMessageType('ListWebPage', (_message.Message,), dict(
+  DESCRIPTOR = _LISTWEBPAGE,
+  __module__ = 'decloak_pb2'
+  # @@protoc_insertion_point(class_scope:decloak.ListWebPage)
+  ))
+_sym_db.RegisterMessage(ListWebPage)
+
 
 
 _FETCHPROXY = _descriptor.ServiceDescriptor(
@@ -230,8 +352,8 @@ _FETCHPROXY = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=314,
-  serialized_end=380,
+  serialized_start=521,
+  serialized_end=587,
   methods=[
   _descriptor.MethodDescriptor(
     name='fetchPage',
@@ -246,5 +368,29 @@ _FETCHPROXY = _descriptor.ServiceDescriptor(
 _sym_db.RegisterServiceDescriptor(_FETCHPROXY)
 
 DESCRIPTOR.services_by_name['FetchProxy'] = _FETCHPROXY
+
+
+_CLOAKDETECTOR = _descriptor.ServiceDescriptor(
+  name='CloakDetector',
+  full_name='decloak.CloakDetector',
+  file=DESCRIPTOR,
+  index=1,
+  options=None,
+  serialized_start=589,
+  serialized_end=662,
+  methods=[
+  _descriptor.MethodDescriptor(
+    name='isCloaked',
+    full_name='decloak.CloakDetector.isCloaked',
+    index=0,
+    containing_service=None,
+    input_type=_LISTWEBPAGE,
+    output_type=_MLRESPONSE,
+    options=None,
+  ),
+])
+_sym_db.RegisterServiceDescriptor(_CLOAKDETECTOR)
+
+DESCRIPTOR.services_by_name['CloakDetector'] = _CLOAKDETECTOR
 
 # @@protoc_insertion_point(module_scope)
