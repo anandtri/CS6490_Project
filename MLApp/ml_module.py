@@ -29,10 +29,9 @@ DETECTION_THRESHOLD = config.getfloat("ml_module", "threshold")
 
 
 # Errors
-class Errors(Enum):
-    PROXY_ERROR = 1
-    NONE = 0
-    ERROR = 2
+PROXY_ERROR = 1
+NONE = 0
+ERROR = 2
 
 
 
@@ -89,43 +88,46 @@ class MlModule:
         jaccard_dist = float(intersection)/float(union)
         return jaccard_dist
 
-    def calc_content_similarity(self, web_response_html, proxy_response_html):
+    def calc_content_similarity(self, web_response=None, proxy_response=None):
         """
         TODO: Extract html from two responses
 
         :return: Similarity score for content. Jaccard score.
         """
-        web_ngrams, web_links = self.extract_content_feature(web_response_html)
-        proxy_ngrams, proxy_links = self.extract_content_feature(proxy_response_html)
+        web_ngrams, web_links = self.extract_content_feature(web_response.body)
+        proxy_ngrams, proxy_links = self.extract_content_feature(proxy_response.body)
         text_score = self.cal_jaccard_distance(web_ngrams, proxy_ngrams)
         link_score = self.cal_jaccard_distance(web_links, proxy_links)
         score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
         return score
 
-    def isCloaked(self, webresponse):
+    def isCloaked(self, webresponse, context):
         """
         TODO: Combine result
         :return: True if cloaking detected, false otherwise
         """
         # Fetching proxy response
-        self.web_response = webresponse
         result = decloak_pb2.MlResponse()
         result.cloaked = False
         result.response = "Success"
-        result.Err = Errors.NONE
+        result.Err = NONE
+        web_response = []
+        for res in webresponse.WebPages:
+            web_response.append(res)
+        proxy_response = []
         try:
             channel = grpc.insecure_channel(PROXY_ADDRESS)
             stub = decloak_pb2_grpc.FetchProxyStub(channel)
-            for res in stub.fetchPage(decloak_pb2.FetchURL(URL=webresponse[0].url)):
-                self.proxy_response.append(res)
-                print res
-        except:
-            result.Err = Errors.PROXY_ERROR
+            for res in stub.fetchPage(decloak_pb2.FetchURL(URL=web_response[0].URL)):
+                proxy_response.append(res)
+        except Exception as E:
+            result.Err = PROXY_ERROR
             result.response = "Proxy Failure"
             return result
         # Content similarity
-        content_similarity_score = self.calc_content_similarity()
-        if content_similarity_score > DETECTION_THRESHOLD:
+        content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
+        print content_similarity_score, web_response[0].URL , proxy_response[0].URL
+        if content_similarity_score < DETECTION_THRESHOLD:
             result.cloaked = True
             result.response = "Content Differs"
             return result
@@ -152,21 +154,17 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         serve()
     else:
-        # Test Code.
-        classifier = MlModule()
-        url1 = sys.argv[1]
-        url2 = sys.argv[2]
-        url1_ngrams, url1_links = classifier.extract_content_feature(urlopen(url1).read())
-        url2_ngrams, url2_links = classifier.extract_content_feature(urlopen(url2).read())
-        text_score = classifier.cal_jaccard_distance(url1_ngrams, url2_ngrams)
-        link_score = classifier.cal_jaccard_distance(url1_links, url2_links)
+        # Test Code
+        channel = grpc.insecure_channel(PROXY_ADDRESS)
+        test = decloak_pb2.ListWebPage()
+        stub = decloak_pb2_grpc.FetchProxyStub(channel)
+        respon = []
+        for res in stub.fetchPage(decloak_pb2.FetchURL(URL=sys.argv[1])):
+            respon.append(res)
+        test.WebPages.extend(respon)
+        ml_module = MlModule()
+        print ml_module.isCloaked(test, {})
 
-        score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
-        print text_score, link_score, score
-        if url1 == url2:
-            assert score >= 0.95, "Different value for same url"
-        else:
-            print url1, url2, "are similar with a score of ", score
 
 
 
