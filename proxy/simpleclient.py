@@ -13,7 +13,7 @@ DEFREMPORT = 50051
 
 def fetchurl(args):
     print "Fetching URL from proxy: ", args.url
-    channel = grpc.insecure_channel("%s:%d" % (args.remote, args.port))
+    channel = grpc.insecure_channel("%s:%d" % (args.remote, int(args.port)))
     stub = decloak_pb2_grpc.FetchProxyStub(channel)
     for res in stub.fetchPage(decloak_pb2.FetchURL(URL=args.url)):
 	print "===> BASIC INFO <==="
