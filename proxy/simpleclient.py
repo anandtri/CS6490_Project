@@ -8,9 +8,11 @@ sys.path.append(os.path.abspath("../proto"))
 import decloak_pb2
 import decloak_pb2_grpc
 
-def fetchurl(url):
+DEFREMPORT = 50051
+
+def fetchurl(url, args):
     print "Fetching URL from proxy: ", url
-    channel = grpc.insecure_channel('localhost:50051')
+    channel = grpc.insecure_channel("%s:%d" % (args.remote, args.port))
     stub = decloak_pb2_grpc.FetchProxyStub(channel)
     for res in stub.fetchPage(decloak_pb2.FetchURL(URL=url)):
 	print "===> BASIC INFO <==="
@@ -33,5 +35,12 @@ def fetchurl(url):
         print ""
 
 if __name__ == '__main__':
+    pr = argparse.ArgumentParser()
+    #pr.add_argument("-d", help="Turn on debugging output.", action="store_true")
+    pr.add_argument("--remote", help="Specify host to connect to. If not specified, connect to localhost.", default='localhost')
+    pr.add_argument("--port", help="Specify port for remote host (default: %d)." % DEFREMPORT, default=DEFREMPORT)
+
+    # Parse command line and do stuff.
+    args  = pr.parse_args()    
     url = sys.argv[1]
-    fetchurl(url)
+    fetchurl(url, args)
