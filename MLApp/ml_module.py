@@ -14,6 +14,7 @@ NGRAM_SIZE = config.getint("ml_module","ngram_size")
 CONTENT_WEIGHT = config.getfloat("ml_module", "content_weight")
 LINKS_WEIGHT = config.getfloat("ml_module", "links_weight")
 PROXY_ADDRESS = config.get("proxy", "address")
+DETECTION_THRESHOLD = config.getfloat("ml_module", "threshold")
 
 
 class MlModule:
@@ -80,12 +81,24 @@ class MlModule:
 
         :return: Similarity score for content. Jaccard score.
         """
+        web_ngrams, web_links = self.extract_content_feature(self.web_response.body)
+        proxy_ngrams, proxy_links = self.extract_content_feature(self.proxy_response.body)
+        text_score = self.cal_jaccard_distance(web_ngrams, proxy_ngrams)
+        link_score = self.cal_jaccard_distance(web_links, proxy_links)
+        score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
+        return score
 
-    def detect_cloaking(self):
+    def is_cloaked(self):
         """
         TODO: Combine result
         :return: True if cloaking detected, false otherwise
         """
+        content_similarity_score = self.calc_content_similarity()
+        print content_similarity_score
+        if content_similarity_score > DETECTION_THRESHOLD:
+            return False
+        else:
+            return True
 
 
 def serve():
@@ -108,11 +121,11 @@ if __name__ == "__main__":
         text_score = classifier.cal_jaccard_distance(url1_ngrams, url2_ngrams)
         link_score = classifier.cal_jaccard_distance(url1_links, url2_links)
 
-score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
-print text_score, link_score, score
-if url1 == url2:
-    assert score >= 0.95, "Different value for same url"
-else:
-    print url1, url2, "are similar with a score of ", score
+    score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
+    print text_score, link_score, score
+    if url1 == url2:
+        assert score >= 0.95, "Different value for same url"
+    else:
+        print url1, url2, "are similar with a score of ", score
 
 
