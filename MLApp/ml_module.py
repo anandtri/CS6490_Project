@@ -11,6 +11,9 @@ config.read('settings.ini')
 
 
 NGRAM_SIZE = config.getint("ml_module","ngram_size")
+CONTENT_WEIGHT = config.getfloat("ml_module", "content_weight")
+LINKS_WEIGHT = config.getfloat("ml_module", "links_weight")
+PROXY_ADDRESS = config.get("proxy", "address")
 
 
 class MlModule:
@@ -25,36 +28,48 @@ class MlModule:
         self.proxy_response = proxy_response
 
     @staticmethod
-    def generate_n_grams(html):
+    def extract_content_feature(html):
         """
         Extract plaintext from HTML response.
-        Generate N-Gram
-        :return: Ngram Map
+        Generate N-Gram for content.
+        :return: ngram map and list of embedded urls
         """
         ngrams = {}
-        soup = BeautifulSoup(html, 'html.parser')
-        text_response = soup.get_text()
-        text_response = text_response.split()   # Get words
-        ngram_list = ["".join(text_response[i:i+NGRAM_SIZE]) for i in range(0, len(text_response)-NGRAM_SIZE+1)]
-        return Counter(ngram_list)
+        try:
+            soup = BeautifulSoup(html, 'html.parser')
+            text_response = soup.get_text()
+            text_response = text_response.split()   # Get words
+            ngram_list = ["".join(text_response[i:i+NGRAM_SIZE]) for i in range(0, len(text_response)-NGRAM_SIZE+1)]
+            links = soup.find_all('a')
+            urls = []
+            for tag in links:
+                link = tag.get("href", None)
+                if link is not None:
+                    urls.append(link)
+            return ngram_list, urls
+        except Exception as E:
+            print "Error while parsing html", E
+            return [], []
 
     @staticmethod
-    def cal_jaccard_distance(ngram_list1, ngram_list2):
+    def cal_jaccard_distance(list1, list2):
         """
-        Calulate jaccard distance from ngrams.
-        :param ngram_list1:
-        :param ngram_list2:
+        Calulate jaccard distance between two lists.
+        :param list1:
+        :param list2:
         :return: Jaccard distance in [0,1]
         """
 
-        set_1 = set(ngram_list1)
-        set_2 = set(ngram_list2)
+        histogram_list1 = Counter(list1)
+        historgram_list2 = Counter(list2)
+        set_1 = set(histogram_list1)
+        set_2 = set(historgram_list2)
         intersection = 0
         union = 0
         for ngram in set_1.intersection(set_2):
-            intersection += ngram_list2[ngram] + ngram_list1[ngram]
+            intersection += histogram_list1[ngram] + historgram_list2[ngram]
         for ngram in set_1.union(set_2):
-            union += ngram_list2[ngram] + ngram_list1[ngram]
+            union += historgram_list2[ngram] + histogram_list1[ngram]
 
         jaccard_dist = float(intersection)/float(union)
         return jaccard_dist
@@ -88,14 +103,16 @@ if __name__ == "__main__":
         classifier = MlModule()
         url1 = sys.argv[1]
         url2 = sys.argv[2]
-        score = classifier.cal_jaccard_distance(
-            classifier.generate_n_grams(urlopen(url1).read()),
-            classifier.generate_n_grams(urlopen(url2).read())
-        )
-        print score
-        if url1 == url2:
-            assert score >= 0.95, "Different value for same url"
-        else:
-            print url1, url2, "are similar with a score of ", score
+        url1_ngrams, url1_links = classifier.extract_content_feature(urlopen(url1).read())
+        url2_ngrams, url2_links = classifier.extract_content_feature(urlopen(url2).read())
+        text_score = classifier.cal_jaccard_distance(url1_ngrams, url2_ngrams)
+        link_score = classifier.cal_jaccard_distance(url1_links, url2_links)
+
+score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
+print text_score, link_score, score
+if url1 == url2:
+    assert score >= 0.95, "Different value for same url"
+else:
+    print url1, url2, "are similar with a score of ", score
 
 
