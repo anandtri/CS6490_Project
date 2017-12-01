@@ -30,7 +30,11 @@ PROXY_ADDRESS = config.get("proxy", "address")
 MY_ADDRESS = config.get("ml_module", "address")
 DETECTION_THRESHOLD = config.getfloat("ml_module", "threshold")
 REDIRECTION_THRESHOLD = config.getint("ml_module", "redirect_threshold")
-
+DEBUG_DUMP = config.getboolean("ml_module", "debug_dump")
+DUMP_DIRECTORY = config.get("ml_module", "dump_directory")
+if DEBUG_DUMP:
+    if not os.path.exists(DUMP_DIRECTORY):
+        os.makedirs(DUMP_DIRECTORY)
 
 # Errors
 PROXY_ERROR = 1
@@ -101,6 +105,10 @@ class MlModule:
         score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
         return score
 
+    @staticmethod
+    def url_to_str(string):
+        return "".join(string.split("/"))
+
     def isCloaked(self, webresponse, context):
         """
         TODO: Combine result
@@ -121,13 +129,19 @@ class MlModule:
             for res in stub.fetchPage(decloak_pb2.FetchURL(URL=web_response[0].URL)):
                 proxy_response.append(res)
         except Exception as E:
+            logging.info("\tProxy Failure")
             result.Err = PROXY_ERROR
             result.response = "Proxy Failure"
             return result
-        # Content similarity
+
+        logging.info(web_response[0].URL)
+        if len(proxy_response) < 0:
+            logging.info("\tProxy Failure")
+            result.Err = PROXY_ERROR
+            result.response = "Proxy Failure"
+            return result
 
         # Verify the final page url is same otherwise redirect chain cloaking
-        logging.info(web_response[0].URL)
         if web_response[-1].URL != proxy_response[-1].URL:
             logging.info("\tURL differs %s %s" % (web_response[-1].URL, proxy_response[-1].URL))
             result.cloaked = True
@@ -140,16 +154,26 @@ class MlModule:
             result.response = "Excessive Redirection"
             return result
 
+        # Content Similarity
         try:
             content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
             logging.info("\tFinal Score %f " % content_similarity_score)
             if content_similarity_score < DETECTION_THRESHOLD:
+                # Dump html content for debugging
+                if DEBUG_DUMP:
+                    with open(os.path.join(DUMP_DIRECTORY,
+                                           self.url_to_str(web_response[-1].URL)) + "_browser.html", "w") as f:
+                        f.write(web_response[-1].body.encode("utf-8"))
+                    with open(os.path.join(DUMP_DIRECTORY,
+                                           self.url_to_str(proxy_response[-1].URL)) + "_proxy.html", "w") as f:
+                        f.write(proxy_response[-1].body.encode("utf-8"))
                 result.cloaked = True
                 result.response = "Content Differs"
                 return result
             else:
                 return result
-        except:
+        except Exception as E:
+            logging.info("\tModule Failure: {}".format(E))
             result.Err = ERROR
             return result
 
