@@ -5,10 +5,9 @@ from bs4 import BeautifulSoup
 from collections import Counter
 import sys
 import grpc
+import re
 import time
-from enum import Enum
 import os
-from urllib import urlopen
 sys.path.append(os.path.abspath("../proto"))
 import decloak_pb2
 import decloak_pb2_grpc
@@ -48,7 +47,7 @@ class MlModule:
         try:
             soup = BeautifulSoup(html, 'html.parser')
             text_response = soup.get_text()
-            text_response = text_response.split()   # Get words
+            text_response = re.sub("[^\w]", " ",  text_response).split() #text_response.split()   # Get words
             ngram_list = ["".join(text_response[i:i+NGRAM_SIZE]) for i in range(0, len(text_response)-NGRAM_SIZE+1)]
             links = soup.find_all('a')
             urls = []
@@ -94,6 +93,7 @@ class MlModule:
         proxy_ngrams, proxy_links = self.extract_content_feature(proxy_response.body)
         text_score = self.cal_jaccard_distance(web_ngrams, proxy_ngrams)
         link_score = self.cal_jaccard_distance(web_links, proxy_links)
+        print "\tText score %f, Link score %f" % (text_score, link_score)
         score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
         return score
 
@@ -123,21 +123,22 @@ class MlModule:
         # Content similarity
 
         # Verify the final page url is same otherwise redirect chain cloaking
-        print web_response[-1].URL, proxy_response[-1].URL
+        print web_response[0].URL
         if web_response[-1].URL != proxy_response[-1].URL:
+            print "\tURL differs %s %s" % (web_response[-1].URL, proxy_response[-1].URL)
             result.cloaked = True
             result.response = "Final URL differs"
             return result
 
         if len(web_response) > REDIRECTION_THRESHOLD or len(proxy_response) > REDIRECTION_THRESHOLD:
+            print "\tExcessive Redirection"
             result.cloaked = True
             result.response = "Excessive Redirection"
             return result
 
         try:
-            print proxy_response[-1].body
             content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
-            print content_similarity_score, web_response[0].URL , proxy_response[0].URL
+            print "\tFinal Score %f " % content_similarity_score
             if content_similarity_score < DETECTION_THRESHOLD:
                 result.cloaked = True
                 result.response = "Content Differs"
