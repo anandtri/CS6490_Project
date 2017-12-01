@@ -26,6 +26,7 @@ LINKS_WEIGHT = config.getfloat("ml_module", "links_weight")
 PROXY_ADDRESS = config.get("proxy", "address")
 MY_ADDRESS = config.get("ml_module", "address")
 DETECTION_THRESHOLD = config.getfloat("ml_module", "threshold")
+REDIRECTION_THRESHOLD = config.getint("ml_module", "redirect_threshold")
 
 
 # Errors
@@ -34,12 +35,7 @@ NONE = 0
 ERROR = 2
 
 
-
 class MlModule:
-
-    def __init__(self):
-        self.web_response = []
-        self.proxy_response = []
 
     @staticmethod
     def extract_content_feature(html):
@@ -125,15 +121,32 @@ class MlModule:
             result.response = "Proxy Failure"
             return result
         # Content similarity
-        content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
-        print content_similarity_score, web_response[0].URL , proxy_response[0].URL
-        if content_similarity_score < DETECTION_THRESHOLD:
+
+        # Verify the final page url is same otherwise redirect chain cloaking
+        print web_response[-1].URL, proxy_response[-1].URL
+        if web_response[-1].URL != proxy_response[-1].URL:
             result.cloaked = True
-            result.response = "Content Differs"
-            return result
-        else:
+            result.response = "Final URL differs"
             return result
 
+        if len(web_response) > REDIRECTION_THRESHOLD or len(proxy_response) > REDIRECTION_THRESHOLD:
+            result.cloaked = True
+            result.response = "Excessive Redirection"
+            return result
+
+        try:
+            print proxy_response[-1].body
+            content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
+            print content_similarity_score, web_response[0].URL , proxy_response[0].URL
+            if content_similarity_score < DETECTION_THRESHOLD:
+                result.cloaked = True
+                result.response = "Content Differs"
+                return result
+            else:
+                return result
+        except:
+            result.Err = ERROR
+            return result
 
 def serve():
     """
