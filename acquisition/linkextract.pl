@@ -5,10 +5,12 @@ use Getopt::Std;
 use Mail::MboxParser;
 use Date::Parse;
 
+my $USER_PAT = '(mike|michael|hibler|eric|eide)';
+
 my $CACHEDIR = '/tmp/mboxcache';
 my $CACHEFILE = "$CACHEDIR/cfile";
 my $NOW = time();
-my $MINSTAMP = $NOW - (86400 * 7);
+my $MINSTAMP = $NOW - (86400 * 14);
 
 my $popts = {
     enable_cache => 1,
@@ -38,9 +40,20 @@ while (my $msg = $mbox->next_message()) {
     my @urls = $body->extract_urls(unique => 1);
     next unless @urls;
 
+    my $skipit = 0;
+    foreach my $urlh (@urls) {
+	if ($urlh->{'url'} =~ /$USER_PAT/i) {
+	    $skipit = 1;
+	    last;
+	}
+    }
+    next if $skipit;
+
+    $subj =~ s/$USER_PAT/******/ig;
+
     print "Subject: $subj\n";
     print "Date: $date\n";
-    for my $urlh (@urls) {
+    foreach my $urlh (@urls) {
 	print "$urlh->{'url'}\n";
     }
     print "\n";
