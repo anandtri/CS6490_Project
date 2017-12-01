@@ -12,6 +12,10 @@ sys.path.append(os.path.abspath("../proto"))
 import decloak_pb2
 import decloak_pb2_grpc
 from concurrent import futures
+import logging
+
+logging.basicConfig(filename='detction.log', level=logging.INFO,
+                    format='%(asctime)s %(message)s')
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
@@ -93,7 +97,7 @@ class MlModule:
         proxy_ngrams, proxy_links = self.extract_content_feature(proxy_response.body)
         text_score = self.cal_jaccard_distance(web_ngrams, proxy_ngrams)
         link_score = self.cal_jaccard_distance(web_links, proxy_links)
-        print "\tText score %f, Link score %f" % (text_score, link_score)
+        logging.info("\tText score %f, Link score %f" % (text_score, link_score))
         score = text_score * CONTENT_WEIGHT + link_score * LINKS_WEIGHT
         return score
 
@@ -123,22 +127,22 @@ class MlModule:
         # Content similarity
 
         # Verify the final page url is same otherwise redirect chain cloaking
-        print web_response[0].URL
+        logging.info(web_response[0].URL)
         if web_response[-1].URL != proxy_response[-1].URL:
-            print "\tURL differs %s %s" % (web_response[-1].URL, proxy_response[-1].URL)
+            logging.info("\tURL differs %s %s" % (web_response[-1].URL, proxy_response[-1].URL))
             result.cloaked = True
             result.response = "Final URL differs"
             return result
 
         if len(web_response) > REDIRECTION_THRESHOLD or len(proxy_response) > REDIRECTION_THRESHOLD:
-            print "\tExcessive Redirection"
+            logging.info("\tExcessive Redirection %d %d", len(web_response), len(proxy_response))
             result.cloaked = True
             result.response = "Excessive Redirection"
             return result
 
         try:
             content_similarity_score = self.calc_content_similarity(web_response[-1], proxy_response[-1])
-            print "\tFinal Score %f " % content_similarity_score
+            logging.info("\tFinal Score %f " % content_similarity_score)
             if content_similarity_score < DETECTION_THRESHOLD:
                 result.cloaked = True
                 result.response = "Content Differs"
