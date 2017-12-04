@@ -1,0 +1,368 @@
+%
+% Slides for SMORE tutorial
+% Author: Kirk Webb
+% Copyright 2015, University of Utah
+%
+
+% Document/preso setup stuff.
+\documentclass[xcolor=pdftex,dvipsnames,table]{beamer}
+\usepackage{alltt}
+\usepackage{pdfpages}
+\usetheme{CambridgeUS}
+\usecolortheme{beaver}
+\title{Tutorial: SMORE in PhantomNet}
+\subtitle{Going Beyond the Basics}
+\setbeamercolor{subtitle}{fg=blue!80!black}
+\setbeamerfont{subtitle}{shape=\itshape}
+\author{Kirk Webb}
+\institute{2015 PhantomNet Workshop}
+\date{February 2, 2015}
+\begin{document}
+
+% Title page
+\begin{frame}
+\titlepage
+\end{frame}
+
+%%%
+%%% Section
+%%%
+\section{Prologue}
+
+% Slide
+\begin{frame}{SMORE as a Use Case}
+  \centerline{\emph{This tutorial demonstrates a PhantomNet use case.}}
+  \vspace{0.1in}
+  \begin{itemize}
+  \item SMORE prototype artifacts aren't general PhantomNet resources.
+  \item Techniques may be useful in your own work.
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{Tutorial Resources}
+  \emph{Please make use of the resources listed below for this tutorial.}
+  \vspace{0.1in}
+  \begin{itemize}
+  \item Download the SMORE NS file:
+    \begin{itemize}
+    \item http://phantomnet.org/smore.ns
+    \item Save locally on your mobile computer
+    \end{itemize}
+  \item Download the SMORE commands cheat sheet.
+    \begin{itemize}
+      \item http://phantomnet.org/smore\_cmds
+      \item Good for cutting and pasting into SSH sessions.
+    \end{itemize}
+  \item Wiki version of this tutorial:
+    \begin{itemize}
+      \item http://phantomnet.org/smore
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{Create New Experiment}
+  \setbeamercovered{dynamic}
+  \emph{As in part 1, we login to PhantomNet and create a new experiment.}
+  \begin{itemize}
+  \item (Login) =$>$ Experimentation =$>$ ``Begin an Experiment''
+  \end{itemize}
+  \centerline{\includegraphics[width=2.5in]{../images/pnet-startexp.png}}
+\end{frame}
+
+% Slide
+\begin{frame}{Enter Experiment Parameters}
+  \emph{Fill in the form as indicated below and then click ``submit''.}
+  \vspace{0.1in}
+  \begin{itemize}
+    %\item Choose the ``PNWorkshop'' project (don't select a group name).
+    %\item Use the ``SMORE Experiment Name'' from your handout as the name.
+    %\item Enter whatever description you like for this experiment.
+    %\item Click ``Choose File'' in the ``Your NS file'' value field.
+    %\item Leave the values in the ``Swapping'' field as is.
+    %\item Change the Linktest option to ``Skip Linktest''.
+    %\item Leave ``Batch Mode Experiment'' unchecked.
+    %\item Check the ``Do Not Swap In'' box.
+    %\item Click ``Submit''.
+    \item Submission will ``Compile'' the experiment and save in the DB.
+    \item Click experiment name link at the top once you see ``Experiment successfully created''
+  \end{itemize}
+  \centerline{\includegraphics[width=2.5in]{../images/pnet-smoredef.png}}
+\end{frame}
+
+% Slide
+\begin{frame}{View Experiment}
+  \centerline{\emph{\small Click experiment name link at the top once you see ``successfully created''}}
+  \vspace{0.1in}
+  \centerline{\includegraphics[width=2.5in]{../images/pnet-smoremake.png}}
+\end{frame}
+
+% Slide
+\begin{frame}{Swap In!}
+  \centerline{\emph{Actually Swap-in the experiment.}}
+  \vspace{0.1in}
+  \begin{itemize}
+  \item SMORE experiment swap-in on VMs will take about 20 minutes.
+  \end{itemize}
+  \centerline{\includegraphics[width=2.5in]{../images/pnet-smoreview.png}}
+\end{frame}
+
+%%%
+%%% Section
+%%%
+\section{Introduction}
+
+% Slide
+\begin{frame}{What is SMORE?}
+  \setbeamercovered{dynamic}
+  \centerline{\emph{SMORE: Software-Defined Networking Mobile Offloading Architecture}}
+  \vspace{0.1in}
+  \only<2,4,6>{
+    \centerline{\includegraphics[width=4.5in]{../images/smore-architecture.png}}}
+  \only<1,3,5>{
+  \begin{itemize}
+  \onslide<1,3,5>
+  \item \alert<1>{Offloads portion of mobile data traffic for subscribed clients}
+  \item \alert<1>{Requires no changes to existing LTE/EPC functions}
+    \begin{itemize}
+    \item \alert<1>{Setup is interposed into basic OpenEPC setup}
+    \end{itemize}
+  \onslide<3,5>
+  \item \alert<3>{Uses SDN to match against GTP bearers (Open vSwitch)}
+  \item \alert<3>{SDN also diverts traffic to offloading server(s) (@ MTSO)}
+  \onslide<5>
+  \item \alert<5>{SMORE monitor records mapping from GTP tunnels to clients}
+  \item \alert<5>{SMORE controller decides which traffic to offload}
+  %\item \alert<7>{Variant available on the PhantomNet Wiki.}
+  %  \begin{itemize}
+  %  \item \alert<7>{http://wiki.phantomnet.org/wiki/phantomnet/oepc-protected/smore-tutorial}
+  %  \end{itemize}
+  \end{itemize}}
+\end{frame}
+
+% Pull in Junguk's slides
+\section{SDN Flows}
+{
+  \setbeamercolor{background canvas}{bg=}
+  \includepdf[pages={7,9,13,14}]{../images/smore_sdn_workflow.pdf}
+}
+
+%%%
+%%% Section
+%%%
+\section{SMORE in PhantomNet}
+
+% Slide
+\begin{frame}{SMORE in PhantomNet}
+  \centerline{\emph{SMORE in PhantomNet Diagram:}}
+  \vspace{0.1in}
+  \centerline{\includegraphics[width=4.5in]{../images/smore-expr-tutorial.png}}
+\end{frame}
+
+% Slide
+\begin{frame}{SMORE Setup - Node Roles}
+  \begin{itemize}
+    \item Unmodified EPC function groups:
+      \begin{itemize}
+      \item epc-enablers (HSS, AAA, PCRF, Web UI, etc.)
+      \item sgw-mme (MME, SGW)
+      \item pgw (PGW)
+      \item enb1 (eNodeB)
+      \item alice (UE)
+      \end{itemize}
+    \item Interposed SMORE elements:
+      \begin{itemize}
+        \item smore: SMORE-SDN (Open vSwitch), SMORE-Monitor, SMORE-Controller
+        \item cloud: Offloading Server node (e.g., game server)
+      \end{itemize}
+    \item New network segments: net\_d\_mme, offload
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}[fragile]{SMORE Experiment - NS File}
+  \begin{itemize}
+    \item URL: http://www.phantomnet.org/smore.ns
+    \item Top-level constant declarations are the same as basic tutorial.
+  \end{itemize}
+  %\vspace{0.1in}
+  \colorbox{SkyBlue!20}{\fontsize{2}{3}\selectfont
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+      \input{smore-top.ns}
+      \end{alltt}
+    \end{minipage}
+  }
+\end{frame}
+
+% Slide
+\begin{frame}[fragile]{SMORE Experiment - NS File details}
+  \begin{itemize}
+    \item Network segment declarations:
+  \end{itemize}
+  %\vspace{0.1in}
+  \colorbox{SkyBlue!20}{\fontsize{2}{3}\selectfont
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+      \input{smore-mid.ns}
+      \end{alltt}
+    \end{minipage}
+  }
+\end{frame}
+
+% Slide
+\begin{frame}[fragile]{SMORE Experiment - NS File details}
+  \begin{itemize}
+    \item Node declarations:
+  \end{itemize}
+  %\vspace{0.1in}
+  \colorbox{SkyBlue!20}{\fontsize{2}{3}\selectfont
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+      \input{smore-nodes.ns}
+      \end{alltt}
+    \end{minipage}
+  }
+\end{frame}
+
+% Slide
+\begin{frame}[fragile]{SMORE Experiment - NS File details}
+  \begin{itemize}
+    \item Link/LAN instantiation and other final declarations:
+  \end{itemize}
+  %\vspace{0.1in}
+  \colorbox{SkyBlue!20}{\fontsize{2}{3}\selectfont
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+      \input{smore-bot.ns}
+      \end{alltt}
+    \end{minipage}
+  }
+\end{frame}
+
+% Slide
+\begin{frame}{SMORE in PhantomNet}
+  \centerline{\emph{SMORE in PhantomNet Diagram:}}
+  \vspace{0.1in}
+  \only<1>{
+    \centerline{\includegraphics[width=4.5in]{../images/smore-expr-tutorial.png}}}
+  \only<2>{
+    \centerline{\includegraphics[width=2.5in]{../images/smore-vm.png}}}
+\end{frame}
+
+%%%
+%%% Section
+%%%
+\section{Interaction}
+
+% Slide
+\begin{frame}{Digging In}
+  \centerline{\emph{Your experiment is (hopefully) now swapped in.}}
+  \begin{itemize}
+  \item Find your experiment again if you've browsed away (phantomnet.org)
+  \item The status should be {\color{red}``active''}
+    \begin{itemize}
+      \item Let a helper know if this is not the case.
+    \end{itemize}
+  \item Note the ``smore'' and ``offload'' nodes -- new in this tutorial.
+  \item Open SSH sessions; SSH first to {\color{blue}users.phantomnet.org}, then to each.
+    \colorbox{SkyBlue!20}{
+      \begin{minipage}{\textwidth}
+        \begin{alltt}
+          sgw.<your\_eid>.pnworkshop \newline
+          smore.<your\_eid>.pnworkshop   \# Session 1 \newline
+          smore.<your\_eid>.pnworkshop   \# Session 2 \newline
+          alice.<your\_eid>.pnworkshop
+        \end{alltt}
+      \end{minipage}
+    }
+  \item Login with your PhantomNet credentials.
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{The basics, Mk II}
+  \fontsize{9}{10.2}\selectfont
+  \centerline{\emph{The SMORE setup initially functions just as the basic OpenEPC setup does.}}
+  \begin{itemize}
+  \item Run the following commands (the name in brackets shows which session to use).
+  \colorbox{SkyBlue!20}{
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+        [sgw]   sudo /opt/OpenEPC/bin/{\color{red}mme}.attach.sh \newline
+        [alice] ping 8.8.8.8 \newline
+        [alice] sudo /opt/OpenEPC/bin/mm.attach.sh \newline
+        [alice (MM console)] mm.connect\_L3 LTE \newline
+        [alice (MM console)] Ctrl-a d \newline
+        [alice] ping 8.8.8.8 \newline
+        [alice] sudo /opt/OpenEPC/bin/mm.attach.sh \newline
+        [alice (MM console)] mm.disconnect\_L3 LTE \newline
+        [alice (MM console)] Ctrl-a d \newline
+        [alice] ping 8.8.8.8
+      \end{alltt}
+    \end{minipage}
+  }
+  \item You should see the attach procedure after issuing ``mm.connect\_L3''
+  \item Connectivity is confirmed with ping once attached.
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{Offloading}
+  \fontsize{9}{10.2}\selectfont
+  \centerline{\emph{Now let's activate the SMORE offloading and confirm that it works.}}
+  \begin{itemize}
+  \item Run the following commands (the name in brackets shows which session to use).
+  \colorbox{SkyBlue!20}{
+    \begin{minipage}{\textwidth}
+      \begin{alltt}
+        [smore{\color{red}1}] cd /opt/binary\_smore/L2\_switch \newline
+        [smore{\color{red}1}] sudo ./stop\_L2\_Switch.sh \newline
+        [smore{\color{red}1}] cd /opt/binary\_smore/smore\_sdn \newline
+        [smore{\color{red}1}] sudo ./start\_smore\_with\_controller.sh \newline
+        [smore{\color{red}1}] cd /opt/binary\_smore/smore\_sdn/controller \newline
+        [smore{\color{red}1}] ryu-manager --verbose SMORE\_controller \newline
+        [smore{\color{blue}2}] cd /opt/binary\_smore/smore\_sdn \newline
+        [smore{\color{blue}2}] sudo ./monitor\_flow.sh \newline
+        [alice] sudo /opt/OpenEPC/bin/mm.attach.sh \newline
+        [alice (MM console)] mm.connect\_L3 LTE \newline
+        [alice (MM console)] Ctrl-a d \newline
+        [alice] ping 8.8.8.8 \newline
+        [alice] ping cloud
+      \end{alltt}
+    \end{minipage}
+  }
+  \item If/when prompted to accept SSH host keys, type ``yes'' (ryu-manager).
+  \item You should see different latencies for Internet vs. offload server.
+  \item ``monitor\_flow'' shows new SDN flow rules as they are added.
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{Swap Out}
+  \centerline{\emph{As in the basic tutorial, we end this one by swapping out.}}
+  \begin{itemize}
+    \item In the PhantomNet web UI, find your SMORE experiment.
+      \begin{itemize}
+        \item My PhantomNet =$>$ ``Current Experiments'' =$>$ click name (EID column)
+      \end{itemize}
+    \item Click the ``Swap Experiment Out'' option and confirm.
+  \end{itemize}
+\end{frame}
+
+% Slide
+\begin{frame}{Wrapping Up}
+  \centerline{\emph{You've now seen an example of using PhantomNet for real work.}}
+  \vspace{0.1in}
+  \begin{itemize}
+  \item We also went over how to:
+    \begin{itemize}
+    \item add arbitrary nodes to your topology
+    \item add latency to certain links
+    \item use a startup command on a particular node
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}
