@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+
+  "name": "Cloaking Detector",
+  "description": "This extension detects if the URL opened by the user is a cloaked URL.",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "icon.png",
+    "default_popup": "popup.html"
+  },
+  "background" : {
+      "scripts": ["bundle.js"],
+      "persistent": true
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "webRequest",
+    "webRequestBlocking",
+    "pageCapture",
+    "<all_urls>"
+  ],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+}
