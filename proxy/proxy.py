@@ -23,8 +23,8 @@ TIMEOUT = 10
 CRAWLERAGENT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 
 BODYPATS = [
-    re.compile('window.location.href\s*=\s*["\'](.+?)["\']'),
-    re.compile('window.location\s*=\s*["\'](.+?)["\']'),
+    re.compile('(?<!onclick=["\'])window.location.href\s*=\s*["\'](?P<URL>.+?)["\']'),
+    re.compile('(?<!onclick=["\'])window.location\s*=\s*["\'](?P<URL>.+?)["\']'),
 ]
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -98,7 +98,7 @@ class pageFetcher(decloak_pb2_grpc.FetchProxyServicer):
         for pat in BODYPATS:
             m = pat.search(data)
             if m:
-                url = m.group(1)
+                url = m.group('URL')
                 break
         return url
     
