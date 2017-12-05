@@ -8,7 +8,7 @@ import re
 import configparser
 import logging
 
-logging.basicConfig(filename='fptest.log', level=logging.INFO,
+logging.basicConfig(filename='eval.log', level=logging.INFO,
                     format='%(asctime)s %(message)s')
 
 config = configparser.ConfigParser()
@@ -62,6 +62,17 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv)<2:
+        main()
+    else:
+        with open(sys.argv[1], "r") as f:
+            urls = f.readlines()
+            for url in urls:
+                url = url.split()[0]
+                logging.info("Start: URL: %s" % url)
+                print get_cloak_info(url)
+                logging.info("End: URL %s" % url)
+
+
 
 
