@@ -1176,6 +1176,15 @@ var decloak_pb_service = require("./decloak_pb_service");
 var BLACKLIST = "";
 getValue("blacklist", (bl) => {BLACKLIST = bl});
 
+var WHITELIST = "";
+getValue("whitelist", (wl) => {
+  if(!wl || wl == "") {
+    WHITELIST = "https://www.google.com;";
+    saveValue("whitelist", WHITELIST);
+  }
+  WHITELIST = wl;
+});
+
 /**
  * Get Set storage
  */
@@ -1277,6 +1286,12 @@ chrome.webRequest.onCompleted.addListener((data) => {
       action: 'getSource'
       }, (source) => {
     */
+    var arr = data.url.split("/");
+    var domain = arr[0] + "//" + arr[2];
+    ///alert("whitelist: " + WHITELIST + " and domain=" + domain);
+    if(WHITELIST.includes(domain)) {
+      return;
+    }
     var params = {mlapp_address:mlapp_host, content:page_source, url:data.url, statusCode:data.statusCode, statusLine: data.statusLine};
         $.ajax({
               url: grpc_proxy_host,
@@ -1292,9 +1307,7 @@ chrome.webRequest.onCompleted.addListener((data) => {
                       if(!blacklist)
                         blacklist = "";
                       //alert("blacklist existing: " + blacklist);
-                      var arr = data.url.split("/");
-                      var domain = arr[0] + "//" + arr[2];
-                      //alert("blacklist domain: " + domain);
+
                       blacklist += domain + ";" ;
                       saveValue("blacklist", blacklist);
                       BLACKLIST = blacklist;
@@ -1317,11 +1330,14 @@ chrome.webRequest.onBeforeRequest.addListener((data) => {
   //Check the URL against the blacklist
   var arr = data.url.split("/");
   var domain = arr[0] + "//" + arr[2];
-  if(BLACKLIST.includes(domain)) {
-    alert("Domain: " + domain + " is blacklisted!! Terminating request");
-    var blockingResponse = {}
-    blockingResponse.cancel = true;
-    return blockingResponse;
+  //Do not check blacklist if whitelisted
+  if(!WHITELIST.includes(domain)) {
+    if(BLACKLIST.includes(domain)) {
+      alert("Domain: " + domain + " is blacklisted!! Terminating request");
+      var blockingResponse = {}
+      blockingResponse.cancel = true;
+      return blockingResponse;
+    }
   }
 
   //Get the source of the page yourself in a separate request
