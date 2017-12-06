@@ -1172,6 +1172,24 @@ exports.__esModule = true;
 var grpc_web_client = require("grpc-web-client");
 var decloak_pb = require("./decloak_pb");
 var decloak_pb_service = require("./decloak_pb_service");
+
+var BLACKLIST = "";
+getValue("blacklist", (bl) => {BLACKLIST = bl});
+
+/**
+ * Get Set storage
+ */
+function getValue(key, callback) {
+  chrome.storage.sync.get(key, (items) => {
+    callback(chrome.runtime.lastError ? null : items[key]);
+  });
+}
+function saveValue(key, value) {
+  var items = {};
+  items[key] = value;
+  chrome.storage.sync.set(items);
+}
+
 /**
 * Get the current URL.
 *
@@ -1217,63 +1235,98 @@ chrome.tabs.query(queryInfo, (tabs) => {
   console.assert(typeof url == 'string', 'tab.url should be a string');
 
   callback(url);
+}); //end of chrome.tabs.query
+} //end of getCurrentTabUrl
+
+var mlapp_host = "127.0.0.1:50052";
+var page_source = "";
+chrome.runtime.onMessage.addListener(function(message, sender, callback) {
+    if (message.action == "mlapp_address") {
+      mlapp_host = message.mlapp_host;
+    }
+    /*else if (message.action == 'getSource') {
+      alert("in getSource: "+ message.source);
+      console.log("in getSource");
+      page_source = message.source;
+      //chrome.tabs.executeScript({file: "get_source.js"}, callback);
+    }*/
 });
-}
+
+var final_url = "";
 chrome.webRequest.onBeforeRedirect.addListener((data) => {
   console.log("redirecting to "+data.redirectUrl);
-  alert("redirecting to url:"+ data.redirectUrl);
-}, {urls: ["<all_urls>"]}, ["responseHeaders"]);
+  //alert("redirecting to url:"+ data.redirectUrl);
+  final_url = data.redirectUrl;
+}, {urls: ["<all_urls>"], types:["main_frame"]}, ["responseHeaders"]);
 
 chrome.webRequest.onCompleted.addListener((data) => {
-  /*getCurrentTabUrl((url) => {
-      /*The below check is required because a single user URL request
-       * might(and mostly does) translate to many different requests
-       */
-      /*if(data.url == url) {
-          console.log("event fired "+data.url);
-          alert("accessing url:"+ data.url);
-      }
-  });*/
-    //alert(data.tabId);
-    chrome.pageCapture.saveAsMHTML({"tabId":859}, function(pageContentBlob){
+    var grpc_proxy_host  = "http://localhost:5000/isCloaked";
+    if(data.url == grpc_proxy_host) {
+      return;
+    }
+    /*chrome.pageCapture.saveAsMHTML({"tabId":data.tabId}, function(pageContentBlob){
       var reader = new FileReader();
       reader.onload = function(e) { //fires when all the page content blob is read
-        var webPage = new decloak_pb.WebPage();
-        webPage.url = data.url;
-        webPage.status = data.statusCode;
-        webPage.reason = data.statusLine;
-        webPage.redirtype = proto.decloak.WebPage.RedirectType.NONE;
-        webPage.body = e.target.result;
 
-        var listWebPage = new decloak_pb.ListWebPage();
-        listWebPage[0] = webPage;
-        grpc_web_client.grpc.unary(decloak_pb_service.CloakDetector.isCloaked, {
-          debug: false,// optional - enable to output events to console.log
-            request: listWebPage,
-            host: "http://localhost:8080",
-            onEnd: function (res) {
-              //alert("in onEnd function");
-              var status = res.status, statusMessage = res.statusMessage;
-              var headers = res.headers, message = res.message, trailers = res.trailers;
-              if(status) {
-                console.log("MLapp return status: " + status + " Status Message:" + statusMessage);
+        var params = {mlapp_address:mlapp_host, content:e.target.result, url:data.url, statusCode:data.statusCode, statusLine: data.statusLine};
+
+  /*  chrome.tabs.sendMessage(data.tabId, {
+      action: 'getSource'
+      }, (source) => {
+    */
+    var params = {mlapp_address:mlapp_host, content:page_source, url:data.url, statusCode:data.statusCode, statusLine: data.statusLine};
+        $.ajax({
+              url: grpc_proxy_host,
+              method: "POST",
+              contentType: "application/json",
+              data: JSON.stringify(params),
+              success: function(msg) {
+                msg = JSON.parse(msg);
+                console.log("Success: " + JSON.stringify(msg));
+                if(msg.cloaked) {
+                  if(confirm("URL " + data.url + " is CLOAKED!. Reason: " + msg.response + ".\n Add to Blacklist?")) {
+                    getValue("blacklist", (blacklist) => {
+                      if(!blacklist)
+                        blacklist = "";
+                      //alert("blacklist existing: " + blacklist);
+                      var arr = data.url.split("/");
+                      var domain = arr[0] + "//" + arr[2];
+                      //alert("blacklist domain: " + domain);
+                      blacklist += domain + ";" ;
+                      saveValue("blacklist", blacklist);
+                      BLACKLIST = blacklist;
+                    });
+                  }
+                }
+              },
+              error: function(msg) {
+                msg = JSON.parse(msg);
+                console.log("Error: " + JSON.stringify(msg));
+                alert("error: " + JSON.stringify(msg));
               }
-              if(message) {
-                alert(typeof(message.toObject()));
-              }
-              if (status === grpc_web_client.Code.OK && message) {
-                console.log("all ok. got response from mlapp: ", message.toObject());
+            });
+    //  }; //end of onload
+      //reader.readAsText(pageContentBlob);
+    //}); //end of saveAsMHTML
+}, {urls: ["<all_urls>"], types:["main_frame"]}, ["responseHeaders"]);
 
-              }
-            } //end of onEnd
-        }); //end of unary
+chrome.webRequest.onBeforeRequest.addListener((data) => {
+  //Check the URL against the blacklist
+  var arr = data.url.split("/");
+  var domain = arr[0] + "//" + arr[2];
+  if(BLACKLIST.includes(domain)) {
+    alert("Domain: " + domain + " is blacklisted!! Terminating request");
+    var blockingResponse = {}
+    blockingResponse.cancel = true;
+    return blockingResponse;
+  }
 
-
-      }; //end of onload
-      reader.readAsText(pageContentBlob);
-    }); //end of saveAsMHTML
-
-}, {urls: ["<all_urls>"]}, ["responseHeaders"]);
+  //Get the source of the page yourself in a separate request
+  $.get(data.url, (source) => {
+    page_source = source;
+  }); //end of $.get
+},  //end of onBeforeRequest Callback
+{urls: ["<all_urls>"], types:["main_frame"]}, ["blocking"]); //end of onBeforeRequest
 
 },{"./decloak_pb":1,"./decloak_pb_service":2,"grpc-web-client":14}],4:[function(require,module,exports){
 "use strict";

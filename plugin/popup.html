@@ -30,14 +30,16 @@
       -
       - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
     -->
-    <script src="popup.js"></script>
+    <script src="jquery-3.2.1.min.js" ></script>
   </head>
 
   <body>
     <h1>Malicious Cloaking Detector</h1>
     <div id="container">
-      <span>proxy-server:</span>
-      <span><input type="text" id="proxy-server" name="proxy-server"/></span>
+      <span>mlapp-proxy:</span>
+      <span><input type="text" id="mlapp-server" name="mlapp-server" /></span>
     </div>
+    <div id="blacklist"></div>
   </body>
+  <script src="popup.js"></script>
 </html>
