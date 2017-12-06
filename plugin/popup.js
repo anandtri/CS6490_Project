@@ -121,4 +121,12 @@ getValue('mlapp_host', (mlapp_host) => {
  getValue('blacklist', (blacklist) => {
    $("#blacklist").text("Blacklist:\n" + (blacklist ? blacklist: ""));
    //alert("blacklist: " + blacklist);
+   var r= $('<input type="button" value="Clear"/>');
+   r.click((e)=> {
+     blacklist = "";
+     saveValue('blacklist', blacklist);
+     $("#blacklist").text("Blacklist:\n" + blacklist);
+     chrome.runtime.sendMessage({action:"updateBlacklist", blacklist:blacklist});
+   });
+   $("#clearBlacklist").append(r);
  });

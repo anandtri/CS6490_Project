@@ -1250,6 +1250,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, callback) {
       page_source = message.source;
       //chrome.tabs.executeScript({file: "get_source.js"}, callback);
     }*/
+    else if (message.action == "updateBlacklist") {
+      BLACKLIST = message.blacklist;
+    }
 });
 
 var final_url = "";
