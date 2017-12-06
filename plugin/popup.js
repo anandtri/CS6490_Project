@@ -130,3 +130,17 @@ getValue('mlapp_host', (mlapp_host) => {
    });
    $("#clearBlacklist").append(r);
  });
+
+ /**
+  * Section: Whitelist
+  */
+  $("#whitelist").change((e) => {
+    wl = $("#whitelist").val();
+    saveValue('whitelist', wl);
+    $("#whitelist").val(wl ? wl+"\n" : "");
+    chrome.runtime.sendMessage({action:"updateWhitelist", whitelist:wl});
+  });
+  getValue('whitelist', (wl) => {
+    $("#whitelist").val(wl ? wl+"\n" : "");
+    chrome.runtime.sendMessage({action:"updateWhitelist", whitelist:wl});
+  });

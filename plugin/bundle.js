@@ -1262,6 +1262,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, callback) {
     else if (message.action == "updateBlacklist") {
       BLACKLIST = message.blacklist;
     }
+    else if (message.action == "updateWhitelist") {
+      WHITELIST = message.whitelist;
+    }
 });
 
 var final_url = "";
