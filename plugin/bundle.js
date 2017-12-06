@@ -1270,22 +1270,15 @@ chrome.webRequest.onBeforeRedirect.addListener((data) => {
   //alert("redirecting to url:"+ data.redirectUrl);
   final_url = data.redirectUrl;
 }, {urls: ["<all_urls>"], types:["main_frame"]}, ["responseHeaders"]);
+/**
+ * Doing this in onBeforeRequest to make it blockingResponse
 
 chrome.webRequest.onCompleted.addListener((data) => {
     var grpc_proxy_host  = "http://localhost:5000/isCloaked";
     if(data.url == grpc_proxy_host) {
       return;
     }
-    /*chrome.pageCapture.saveAsMHTML({"tabId":data.tabId}, function(pageContentBlob){
-      var reader = new FileReader();
-      reader.onload = function(e) { //fires when all the page content blob is read
 
-        var params = {mlapp_address:mlapp_host, content:e.target.result, url:data.url, statusCode:data.statusCode, statusLine: data.statusLine};
-
-  /*  chrome.tabs.sendMessage(data.tabId, {
-      action: 'getSource'
-      }, (source) => {
-    */
     var arr = data.url.split("/");
     var domain = arr[0] + "//" + arr[2];
     ///alert("whitelist: " + WHITELIST + " and domain=" + domain);
@@ -1321,19 +1314,17 @@ chrome.webRequest.onCompleted.addListener((data) => {
                 alert("error: " + JSON.stringify(msg));
               }
             });
-    //  }; //end of onload
-      //reader.readAsText(pageContentBlob);
-    //}); //end of saveAsMHTML
 }, {urls: ["<all_urls>"], types:["main_frame"]}, ["responseHeaders"]);
-
+*/
 chrome.webRequest.onBeforeRequest.addListener((data) => {
+  var cancel = false;
   //Check the URL against the blacklist
   var arr = data.url.split("/");
   var domain = arr[0] + "//" + arr[2];
   //Do not check blacklist if whitelisted
   if(!WHITELIST.includes(domain)) {
     if(BLACKLIST.includes(domain)) {
-      alert("Domain: " + domain + " is blacklisted!! Terminating request");
+      //alert("Domain: " + domain + " is blacklisted!! Terminating request");
       var blockingResponse = {}
       blockingResponse.cancel = true;
       return blockingResponse;
@@ -1341,9 +1332,64 @@ chrome.webRequest.onBeforeRequest.addListener((data) => {
   }
 
   //Get the source of the page yourself in a separate request
-  $.get(data.url, (source) => {
-    page_source = source;
-  }); //end of $.get
+  $.ajax({
+    async: false,
+    method: "GET",
+    url: data.url,
+    success: (source, status, jqXHR) => {
+      var statusCode = jqXHR.status;
+      var statusLine = jqXHR.statusText;
+      //alert("statusCode: " + statusCode + " and statusLIne:" + statusLine );
+      page_source = source;
+
+      // Block and perform the cloak check
+      var grpc_proxy_host  = "http://localhost:5000/isCloaked";
+      if(data.url == grpc_proxy_host) {
+        return;
+      }
+
+      if(WHITELIST.includes(domain)) {
+        return;
+      }
+
+      var params = {mlapp_address:mlapp_host, content:page_source, url:data.url, statusCode:statusCode, statusLine: statusLine};
+          $.ajax({
+                async: false,
+                url: grpc_proxy_host,
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(params),
+                success: function(msg) {
+                  msg = JSON.parse(msg);
+                  console.log("Success: " + JSON.stringify(msg));
+                  if(msg.cloaked) {
+                    if(confirm("URL " + data.url + " is CLOAKED!. Reason: " + msg.response + ".\n Add to Blacklist and stop loading?")) {
+                      getValue("blacklist", (blacklist) => {
+                        if(!blacklist)
+                          blacklist = "";
+                        //alert("blacklist existing: " + blacklist);
+
+                        blacklist += domain + ";" ;
+                        saveValue("blacklist", blacklist);
+                        BLACKLIST = blacklist;
+                      });
+                      cancel = true;
+                    }
+                  }
+                },
+                error: function(msg) {
+                  msg = JSON.parse(msg);
+                  console.log("Error: " + JSON.stringify(msg));
+                  alert("error: " + JSON.stringify(msg));
+                }
+              });
+    }
+  }); //end of $.ajax
+  if(cancel) {
+    var blockingResponse = {}
+    blockingResponse.cancel = true;
+    return blockingResponse;
+  }
 },  //end of onBeforeRequest Callback
 {urls: ["<all_urls>"], types:["main_frame"]}, ["blocking"]); //end of onBeforeRequest
 
