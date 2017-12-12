@@ -1,0 +1,67 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+
+\usepackage{epsfig,xspace,url}
+\usepackage{epstopdf}
+\usepackage{color}
+\usepackage{graphicx}
+
+\title{\vspace{-2.0cm}Client Side Web Cloaking Detection}
+\author{
+Anand Tripathi\\
+       atripath@cs.utah.edu
+\and 
+Kirk Webb\\
+       kwebb@cs.utah.edu
+\and
+Anmol Vatsa\\
+       anvatsa@cs.utah.edu
+}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Web cloaking refers to the set of techniques that a web server uses to fingerprint incoming visitors in order to customize page content. An example can be, a website serving optimized pages for small screens. However, cloaking is often misused by miscreants to hide the true nature of malicious sites.  This may be done to improve search ranking (by stuffing crawler-facing pages with keywords), or simply to hide questionable or malicious content from any other than the intended end-user audience.
+
+Invernizzi et al ~\cite{cloak} measured the prevalence of cloaking on the web as well as its use by attackers to increase their search ranking and hide malicious content being served from web crawlers. The work also proposed a cloaking detection system but it's currently targeted towards search engines and security companies. One interesting insight of the study was that the content of cloaked websites retrieved from the client browser will be different from the one observed with a web crawler.
+
+The goal of this project is to investigate the possibility of detecting web cloaking from a web client vantage point.  We built a browser plug-in that works with other components to detect the use of cloaking by websites; the plug-in blocks and alerts the user on detection. Separately-running crawler proxy and content classification components are invoked by the plug-in.  Figure~\ref{fig:arch} provides a high-level view of our architecture.
+
+%%% ARCHITECTURE FIGURE
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.4\textwidth]{./proj-diagram.png}
+  \caption{Website cloak detection components.}
+  \label{fig:arch}
+\end{figure}
+
+We started with the assumption that cloaked websites serve different content to browser and web crawler.  The browser calls the classifier module, passing it the content of the page.  The classifier makes a parallel crawler request. After retrieving the content from these requests, the classifier extracts the relevant content features and does a comparison ~\cite{cloak} to identify any major differences.  Mismatches over a threshold will be detected as cloaking.  In either case, the classifier returns the detection result back to the browser.
+
+We obtained web sites to test from two sources: web search results and spam email.  These two sources showed divergent techniques for presenting users with web content.  Sites from spam email tended to hide behind HTTP redirect chains while sites from web searches used the form of cloaking previously described.  We wrote our components to extract redirection chains and to be able to classify both types of content hiding.
+
+Our results show that cloaking on specific keywords and topics is very common, despite being heavily penalized and discouraged by search engine providers. Over 50\% of all results in the top 50(?) list of sites returned in a Google search for ``buy viagra'' were cloaked. Current trends in sites provided in email nearly all use redirection chains in an attempt to hide the final site contents from casual scanning and crawling.  Operators of cloaked websites want users to find their content using search engines.  Sites delivered via spam email only want to be located via the spam itself.
+
+\section{Related Work}
+
+\section{Adversary Model}
+
+This work operates under the premise that cloaked websites utilize largely simple techniques to differentiate between browser clients and web crawlers. In particular, we assume that site operator adversaries gate on HTTP client headers such as \texttt{User-Agent}.  Typical browsers and search engines make clear their disposition via these headers.  Our classifier component is able to distinguish differences in relatively static web content.  It does not do well with highly dynamic pages such as news sites.  Further, our crawler proxy is able to handle redirection chains that explicitly use HTTP redirect return codes in addition to obvious javascript-based redirection code snippets.  Our components cannot handle obfuscation that occurs through general javascript code.  Such techniques are most common on sites protected from attack by wrapper services such as CloudFlare~\ref{cloudflare} and CloudFront~\ref{cloudfront}.
+
+\section{Methodology}
+
+The general approach we take to detecting web cloaking is to fetch pages from multiple vantage points and compare the results.  Our component architecture allow for strategic deployment of functionality to take advantage of greater processing resources for classification, or different Internet subnets for collecting website content. Experiments were conducted on personal laptops, on the CloudLab testbed~\cite{cloudlab}, and on Google Cloud's Compute Engine~\cite{gcloud}. The classifier uses lightweight content feature extraction and similarity scoring to detect divergence.  We stepped through a range of score thresholds to find the one that minimizes false positives while maximizing true positives.  Websites where cloaking was detected where manually inspected for verification.
+
+\subsection{Crawler Proxy}
+
+The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect (code 301 - 310), the crawler extracts and follows the redirect URL provided.  If the page content includes straightforward code snippets that perform redirect based on the javascript \texttt{onload} event, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the caller for analysis.
+
+\section{Implementation and Experimentation}
+
+\section{Conclusion}
+
+\begin{thebibliography}{1}
+
+  \bibitem{cloak} Invernizzi, Luca, et al. {\em ``Cloak of Visibility: Detecting When Machines Browse A Different Web.''} Security and Privacy (SP), 2016 IEEE Symposium on. IEEE, 2016..
+
+\end{thebibliography}
+
+\end{document}
