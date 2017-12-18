@@ -59,7 +59,7 @@ X Liao et al.\cite{liao2016lurking} do a comprehensive analysis of public cloud 
 
 `Cloak and Dagger: Dynamics of Web Search Cloaking'\cite{Wang:2011:CDD:2046707.2046763} takes up the study of Web Cloaking over a period of time, tracking popular search keywords and terms over a period of 5 months and determining the expected lifetime of cloaked search results using their custom crawler.
 
-A.Naga Venkata Sunila and Anjali Sardana in their work `A Reputation Based Detection Technique to Cloaked Web Spam'\cite{sunil2012reputation} propose a technique of sorting URL's by reputation that could be applied to on a crowd-sourc basis to effectively eliminiate further false positives for highly dynamic but community trusted sites.
+A.Naga Venkata Sunila and Anjali Sardana in their work `A Reputation Based Detection Technique to Cloaked Web Spam'\cite{sunil2012reputation} propose a technique of sorting URL's by reputation that could be applied on a crowd-source basis to effectively eliminiate further false positives for highly dynamic but community trusted sites.
 \section{Adversary Model}
 
 This work operates under the premise that cloaked websites utilize largely simple techniques to differentiate between browser clients and web crawlers. In particular, we assume that site operator adversaries gate on HTTP client headers such as \texttt{User-Agent}.  Typical browsers and search engines make clear their disposition via these headers.  Our classifier component is able to distinguish differences in relatively static web content.  It does not do well with highly dynamic pages such as news sites.  Further, our crawler proxy is able to handle redirection chains that explicitly use HTTP redirect return codes in addition to obvious javascript-based redirection code snippets.  Our components cannot handle obfuscation that occurs through general javascript code.  Such techniques are most common on sites protected from attack by wrapper services such as CloudFlare~\ref{cloudflare} and CloudFront~\ref{cloudfront}.
@@ -70,7 +70,7 @@ The general approach we take to detecting web cloaking is to fetch pages from mu
 
 \subsection{Browser Plugin}
 
-The browser plugin is modeled as a Chrome Browser Extension. It utilizes the Chrome Platform Javascript APIs to intercepts all webrequests from the browser, inspect Headers for HTTP redirects and block the request if required. A snapshot of this extension is shown in Figure \ref{fig:plugin}.\\
+The browser plugin is modeled as a Chrome Browser Extension. It utilizes the Chrome Platform Javascript APIs to intercepts all webrequests from the browser, inspect Headers for HTTP redirects and block the request if required. A snapshot of this extension is shown in Figure \ref{fig:plugin}.
 
 %%%CHROME BROWSER EXTENSION
 \begin{figure}[t]
