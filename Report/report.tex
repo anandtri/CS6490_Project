@@ -5,19 +5,31 @@
 %\usepackage{color}
 \usepackage{graphicx}
 \usepackage{mathptmx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
 
 \title{\vspace{-2.0cm}Client Side Web Cloaking Detection}
 \author{
 Anand Tripathi\\
        atripath@cs.utah.edu
-\and 
+\and
 Kirk Webb\\
        kwebb@cs.utah.edu
 \and
 Anmol Vatsa\\
        anvatsa@cs.utah.edu
 }
+\date{Code link: \url{https://github.com/anandtri/CS6490\_Project}\\
+\today}
+
 \begin{document}
+
 \maketitle
 
 \section{Introduction}
@@ -51,8 +63,23 @@ This work operates under the premise that cloaked websites utilize largely simpl
 
 The general approach we take to detecting web cloaking is to fetch pages from multiple vantage points and compare the results.  Our component architecture allow for strategic deployment of functionality to take advantage of greater processing resources for classification, or different Internet subnets for collecting website content. Experiments were conducted on personal laptops, on the CloudLab testbed~\cite{cloudlab}, and on Google Cloud's Compute Engine~\cite{gcloud}. The classifier uses lightweight content feature extraction and similarity scoring to detect divergence.  We stepped through a range of score thresholds to find the one that minimizes false positives while maximizing true positives.  Websites where cloaking was detected where manually inspected for verification.
 
-\subsection{Crawler Proxy}
+\subsection{Browser Plugin}
 
+The browser plugin is modeled as a Chrome Browser Extension. It utilizes the Chrome Platform Javascript APIs to intercepts all webrequests from the browser, inspect Headers for HTTP redirects and block the request if required. A snapshot of this extension is shown in Figure \ref{fig:plugin}.\\
+
+%%%CHROME BROWSER EXTENSION
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.4\textwidth]{./proj_plugin.png}
+  \caption{Chrome Browser Extension Snapshot.}
+  \label{fig:plugin}
+\end{figure}
+
+Upon intercepting a web request, the browser plugin fetches the page content in a parallel request and invokes the Classifier module. It provides the content of the web page requested to the Classifier module as part of this request. The plugin makes no assumptions about the location of the Classifier module and allows the user/app-developer to configure its location in the plugin as a destination IPaddress and port. The details of Cloak detection are completely abstracted away from the plugin. It completely relies on the Classifier module to do the job, including invoking the Crawler Proxy. It expects a binary yes or no result, along with a reason for the decision. This model would potentially allow easy updates to the backend modules, i.e. the Classifier and the Crawler Proxy modules, without affecting the user facing browser plugin component.
+
+Upon receiving the results from the Classifier, the browser either lets the original web request go through, or warns the user that the URL requested is serving Cloaked Content and prompts the user to cancel the request and add the domain of the URL to its Blacklist. Since some websites employ cloaking to legitimately serve different contents on different types of devices and users, the plugin also allows an option to add domains to a Whitelist, just in case the Classifier module classifies a legitimate cloaked URL as malicious. The browser plugin will not block and inspect any request to any URL on the domains added in the Whitelist.
+
+\subsection{Crawler Proxy}
 The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect (code 301 - 310), the crawler extracts and follows the redirect URL provided.  If the page content includes straightforward code snippets that perform redirect based on the javascript \texttt{onload} event, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the caller for analysis.
 
 \section{Implementation and Experimentation}
