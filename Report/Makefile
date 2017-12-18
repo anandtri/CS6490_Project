@@ -6,12 +6,11 @@ all: report.pdf
 
 pdf: report.pdf
 
-#report.pdf: biblio.bib $(TEXSRC)
-report.pdf: $(TEXSRC)
+report.pdf: biblio.bib $(TEXSRC)
 	pdflatex report
-	#bibtex report
+	bibtex report
 	pdflatex report
 	pdflatex report
 
-clean: 
+clean:
 	\rm -f *.dvi *.aux *.ps *~ *.log *.blg *.bbl *.out report.pdf

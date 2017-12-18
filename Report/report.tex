@@ -54,7 +54,12 @@ We obtained web sites to test from two sources: web search results and spam emai
 Our results show that cloaking on specific keywords and topics is very common, despite being heavily penalized and discouraged by search engine providers. Over 50\% of all results in the top 50(?) list of sites returned in a Google search for ``buy viagra'' were cloaked. Current trends in sites provided in email nearly all use redirection chains in an attempt to hide the final site contents from casual scanning and crawling.  Operators of cloaked websites want users to find their content using search engines.  Sites delivered via spam email only want to be located via the spam itself.
 
 \section{Related Work}
+Our work is mostly inspired by `Cloak of Visibility' by Invernizzi et al.\cite{cloak}. But many other works discuss cloaking on similar lines. Baoning Wu and Brian D. Davison in their paper on `Detecting semantic cloaking on the web'\cite{Wu:2006:DSC:1135777.1135901} use a very similar approach as the one we used in this project, i.e. matching different copies of the same page fetched via a browser and a proxy crawler. However, they go a step farther by establishing a two step process that uses a heuristic to match the content/context of the different versions of the pages by extracting keywords from the pages. This helps them eliminate some of the false positives where relatively similar, but dynamic content is served every time the page is opened.\\
+X Liao et al.\cite{liao2016lurking} do a comprehensive analysis of public cloud repositories to find out malicious cloud buckets that serve as gateways, content repositories or nodes in redirection based cloaking techinques. Part of their work focuses on identifying redirection based obfuscation based on the analysis of the entire redirection chain, which could be a most interesting addition to our own attempt at web cloak detection.
 
+`Cloak and Dagger: Dynamics of Web Search Cloaking'\cite{Wang:2011:CDD:2046707.2046763} takes up the study of Web Cloaking over a period of time, tracking popular search keywords and terms over a period of 5 months and determining the expected lifetime of cloaked search results using their custom crawler.
+
+A.Naga Venkata Sunila and Anjali Sardana in their work `A Reputation Based Detection Technique to Cloaked Web Spam'\cite{sunil2012reputation} propose a technique of sorting URL's by reputation that could be applied to on a crowd-sourc basis to effectively eliminiate further false positives for highly dynamic but community trusted sites.
 \section{Adversary Model}
 
 This work operates under the premise that cloaked websites utilize largely simple techniques to differentiate between browser clients and web crawlers. In particular, we assume that site operator adversaries gate on HTTP client headers such as \texttt{User-Agent}.  Typical browsers and search engines make clear their disposition via these headers.  Our classifier component is able to distinguish differences in relatively static web content.  It does not do well with highly dynamic pages such as news sites.  Further, our crawler proxy is able to handle redirection chains that explicitly use HTTP redirect return codes in addition to obvious javascript-based redirection code snippets.  Our components cannot handle obfuscation that occurs through general javascript code.  Such techniques are most common on sites protected from attack by wrapper services such as CloudFlare~\ref{cloudflare} and CloudFront~\ref{cloudfront}.
@@ -86,10 +91,10 @@ The crawler proxy operates as a stand-alone daemon that waits for incoming reque
 
 \section{Conclusion}
 
-\begin{thebibliography}{1}
-
-  \bibitem{cloak} Invernizzi, Luca, et al. {\em ``Cloak of Visibility: Detecting When Machines Browse A Different Web.''} Security and Privacy (SP), 2016 IEEE Symposium on. IEEE, 2016..
-
-\end{thebibliography}
+{
+  \small
+  \bibliographystyle{acm}
+  \bibliography{biblio}
+}
 
 \end{document}
