@@ -52,8 +52,6 @@ We started with the assumption that cloaked websites serve different content to 
 
 We obtained web sites to test from two sources: web search results and spam email.  These two sources showed divergent techniques for presenting users with web content.  Sites from spam email tended to hide behind HTTP redirect chains while sites from web searches used the form of cloaking previously described.  We wrote our components to extract redirection chains and to be able to classify both types of content hiding.
 
-Our results show that cloaking on specific keywords and topics is very common, despite being heavily penalized and discouraged by search engine providers. Over 50\% of all results in the top 50(?) list of sites returned in a Google search for ``buy viagra'' were cloaked. Current trends in sites provided in email nearly all use redirection chains in an attempt to hide the final site contents from casual scanning and crawling.  Operators of cloaked websites want users to find their content using search engines.  Sites delivered via spam email only want to be located via the spam itself.
-
 \section{Related Work}
 Our work is mostly inspired by `Cloak of Visibility' by Invernizzi et al.\cite{cloak}. But many other works discuss cloaking on similar lines. Baoning Wu and Brian D. Davison in their paper on `Detecting semantic cloaking on the web'\cite{Wu:2006:DSC:1135777.1135901} use a very similar approach as the one we used in this project, i.e. matching different copies of the same page fetched via a browser and a proxy crawler. However, they go a step farther by establishing a two step process that uses a heuristic to match the content/context of the different versions of the pages by extracting keywords from the pages. This helps them eliminate some of the false positives where relatively similar, but dynamic content is served every time the page is opened.\\
 X Liao et al.\cite{liao2016lurking} do a comprehensive analysis of public cloud repositories to find out malicious cloud buckets that serve as gateways, content repositories or nodes in redirection based cloaking techinques. Part of their work focuses on identifying redirection based obfuscation based on the analysis of the entire redirection chain, which could be a most interesting addition to our own attempt at web cloak detection.
@@ -128,6 +126,9 @@ W_{final} =  W_{content} * J_{content} + W_{links} * J_{links}
 W_{content} + W_{links}  =   1
 \end{equation}
 
+\subsubsection{Redirection Chain}
+We observed that most of the sites found in spam emails used redirection chains to avoid casual scanning. We currently use the length of the redirection chains as a measure of detecting cloaking as for a cloaked site the number of hops is significantly larger than the one used by most benign sites.
+
 \subsection{Evaluation}
 Figure \ref{fig:roc} plots the tradeoff our system achieves between true positive and false negatives with varying threshold value $\tau_{det}$. We found the optimal threshold to be at $0.4$ which detected all known instances of cloaking while keeping the false positives low. Any value higher will result in increased amount of false positives the user has to review. We present our final accuracy in Table \ref{tab:eval}.
 
@@ -157,6 +158,8 @@ Figure \ref{fig:roc} plots the tradeoff our system achieves between true positiv
 Given a large number of false positives, we tried to identify the reason our system misclassified some of the benign URLs. We found that many of these websites blocked our google bot crawler and returned a response 403 (Access forbidden). Interestingly Google presents an older version of their homepage to the bot. We also found instances of CloudFlare DDoS protection system ~\cite{cloudflare} blocking our crawler, which we mistook for cloaked content.
 
 \section{Conclusion}
+
+Our results show that cloaking on specific keywords and topics is very common, despite being heavily penalized and discouraged by search engine providers. Over 50\% of all results in the top 50/100 list of sites returned in a Google search for ``buy viagra'' were cloaked. Current trends in sites provided in email nearly all use redirection chains in an attempt to hide the final site contents from casual scanning and crawling.  Operators of cloaked websites want users to find their content using search engines.  Sites delivered via spam email only want to be located via the spam itself.
 
 {
   \small
