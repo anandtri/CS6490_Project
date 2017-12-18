@@ -135,7 +135,7 @@ class MlModule:
             return result
 
         logging.info(web_response[0].URL)
-        if len(proxy_response) < 0:
+        if len(proxy_response) <= 0:
             logging.info("\tProxy Failure")
             result.Err = PROXY_ERROR
             result.response = "Proxy Failure"
@@ -162,10 +162,10 @@ class MlModule:
                 # Dump html content for debugging
                 if DEBUG_DUMP:
                     with open(os.path.join(DUMP_DIRECTORY,
-                                           self.url_to_str(web_response[-1].URL)) + "_browser.html", "w") as f:
+                                           self.url_to_str(web_response[-1].URL.replace(":", "_"))) + "_browser.html", "w") as f:
                         f.write(web_response[-1].body.encode("utf-8"))
                     with open(os.path.join(DUMP_DIRECTORY,
-                                           self.url_to_str(proxy_response[-1].URL)) + "_proxy.html", "w") as f:
+                                           self.url_to_str(proxy_response[-1].URL.replace(":", "_"))) + "_proxy.html", "w") as f:
                         f.write(proxy_response[-1].body.encode("utf-8"))
                 result.cloaked = True
                 result.response = "Content Differs"
