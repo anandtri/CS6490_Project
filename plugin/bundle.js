@@ -1174,7 +1174,11 @@ var decloak_pb = require("./decloak_pb");
 var decloak_pb_service = require("./decloak_pb_service");
 
 var BLACKLIST = "";
-getValue("blacklist", (bl) => {BLACKLIST = bl});
+getValue("blacklist", (bl) => {
+  if(typeof bl != 'undefined') {
+    BLACKLIST = bl;
+  }
+});
 
 var WHITELIST = "";
 getValue("whitelist", (wl) => {
@@ -1325,8 +1329,8 @@ chrome.webRequest.onBeforeRequest.addListener((data) => {
   var arr = data.url.split("/");
   var domain = arr[0] + "//" + arr[2];
   //Do not check blacklist if whitelisted
-  if(!WHITELIST.includes(domain)) {
-    if(BLACKLIST.includes(domain)) {
+  if(WHITELIST && !WHITELIST.includes(domain)) {
+    if(BLACKLIST && BLACKLIST.includes(domain)) {
       //alert("Domain: " + domain + " is blacklisted!! Terminating request");
       var blockingResponse = {}
       blockingResponse.cancel = true;
