@@ -5,6 +5,7 @@
 %\usepackage{color}
 \usepackage{graphicx}
 \usepackage{mathptmx}
+\usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
 \hypersetup{
@@ -62,7 +63,7 @@ X Liao et al.\cite{liao2016lurking} do a comprehensive analysis of public cloud 
 A.Naga Venkata Sunila and Anjali Sardana in their work `A Reputation Based Detection Technique to Cloaked Web Spam'\cite{sunil2012reputation} propose a technique of sorting URL's by reputation that could be applied on a crowd-source basis to effectively eliminiate further false positives for highly dynamic but community trusted sites.
 \section{Adversary Model}
 
-This work operates under the premise that cloaked websites utilize largely simple techniques to differentiate between browser clients and web crawlers. In particular, we assume that site operator adversaries gate on HTTP client headers such as \texttt{User-Agent}.  Typical browsers and search engines make clear their disposition via these headers.  Our classifier component is able to distinguish differences in relatively static web content.  It does not do well with highly dynamic pages such as news sites.  Further, our crawler proxy is able to handle redirection chains that explicitly use HTTP redirect return codes in addition to obvious javascript-based redirection code snippets.  Our components cannot handle obfuscation that occurs through general javascript code.  Such techniques are most common on sites protected from attack by wrapper services such as CloudFlare~\ref{cloudflare} and CloudFront~\ref{cloudfront}.
+This work operates under the premise that cloaked websites utilize largely simple techniques to differentiate between browser clients and web crawlers. In particular, we assume that site operator adversaries gate on HTTP client headers such as \texttt{User-Agent}.  Typical browsers and search engines make clear their disposition via these headers.  Our classifier component is able to distinguish differences in relatively static web content.  It does not do well with highly dynamic pages such as news sites.  Further, our crawler proxy is able to handle redirection chains that explicitly use HTTP redirect return codes in addition to obvious javascript-based redirection code snippets.  Our components cannot handle obfuscation that occurs through general javascript code.  Such techniques are most common on sites protected from attack by wrapper services such as CloudFlare~\cite{cloudflare} and CloudFront~\cite{cloudfront}.
 
 \section{Methodology}
 
@@ -88,6 +89,72 @@ Upon receiving the results from the Classifier, the browser either lets the orig
 The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect (code 301 - 310), the crawler extracts and follows the redirect URL provided.  If the page content includes straightforward code snippets that perform redirect based on the javascript \texttt{onload} event, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the caller for analysis.
 
 \section{Implementation and Experimentation}
+
+\subsection{Candidate URL selection}
+For our measurement, we collected URLs (Table \ref{tab:dataset}) from various sources including popular websites, Google search results, and spam emails. Our set of benign samples consisted of top 1000 websites in the Quantcast Top Million List ~\cite{quantcast}, all of which are assumed to be non-cloaked. We collected our blackhat dataset by extracting embedded URLs in spam emails, as well as, top results for Google search on popular terms (e.g. Viagra, cheap Rolex etc.) which are shown to be cloaked ~\cite{cloak, Wang:2011:CDD:2046707.2046763}. An emulated browser using Selenium ~\cite{selenium} was used to extract search results and evaluation.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|ccc|}
+\hline
+{\bf Dataset} & {\bf Source} & {\bf No. of Urls} \\
+\hline
+Benign & Quantcast Top Million & 1000\\
+Cloaked & Spam emails and Google Search & 314\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Data set used for evaluation}\label{tab:dataset}
+\end{table}
+
+
+\subsection{Features}
+Cloaked pages often have entirely different HTML text and generally point to distinct link locations. We also observed redirection chains being used to hide the penultimate page. Based on these observations we decided to compare the textual and structural similarity of content between the two responses received by the detection module.
+
+\subsubsection{Content similarity}
+We detect cloaking that returns entirely distinct HTML by comparing the similarity of the overall HTML text. We start by filtering out all white space and non-alphanumeric characters and use a regex to extract words. We then tokenize the content using a sliding window approach to generate 3-grams. Finally, we use Jaccard similarity index to generate a similarity score $J_{content}$.
+
+\begin{equation}
+J_{content}(A, B) = \frac{|A \cap B|}{|A \cup B|}
+\end{equation}
+
+The same process is repeated for embedded URLs in the HTML response. The two set of URLs are compared again using Jaccard index to obtain a different similarity score $J_{links}$. Once we have the two scores we use a weighted ensemble to get a final similarity score $W_{final}$ which is compared against a threshold $\tau_{det}$ to classify that URL as cloaked.
+
+
+\begin{equation}
+W_{final} =  W_{content} * J_{content} + W_{links} * J_{links}
+\end{equation}
+\begin{equation}
+W_{content} + W_{links}  =   1
+\end{equation}
+
+\subsection{Evaluation}
+Figure \ref{fig:roc} plots the tradeoff our system achieves between true positive and false negatives with varying threshold value $\tau_{det}$. We found the optimal threshold to be at $0.4$ which detected all known instances of cloaking while keeping the false positives low. Any value higher will result in increased amount of false positives the user has to review. We present our final accuracy in Table \ref{tab:eval}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.4\textwidth]{./proj-roc.png}
+  \caption{Receiver operating characteristic curve for our classifier with variable $\tau_{det}$.}
+  \label{fig:roc}
+\end{figure}
+
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|lcccc|}
+\hline
+{\bf Accuracy} & {\bf TP} & {\bf FP}  & {\bf TN} & {\bf FN}\\
+\hline
+80\% & 100 \% & 10.4 \% &  89.6 \% & 0 \%\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Evaluation for chosen optimal threshold}\label{tab:eval}
+\end{table}
+
+\subsubsection{False positives analysis}
+Given a large number of false positives, we tried to identify the reason our system misclassified some of the benign URLs. We found that many of these websites blocked our google bot crawler and returned a response 403 (Access forbidden). Interestingly Google presents an older version of their homepage to the bot. We also found instances of CloudFlare DDoS protection system ~\cite{cloudflare} blocking our crawler, which we mistook for cloaked content.
 
 \section{Conclusion}
 
