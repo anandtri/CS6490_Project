@@ -180,7 +180,7 @@ In future, we would like to use trained machine learning models for classificati
 \appendix
 \section{Cloaking Example}
 Figure \ref{fig:cloak_eg} provides an example of cloaking as observed during our experiments. The URL {\it vivon[.]com/mattresses/spring-mattresses} showed random behavior when accessing it through the browser. Sometimes there was an addition redirection to a counterfeit online drug store.
-\begin{figure*}
+\begin{figure*}[t]
   \begin{subfigure}{0.5\textwidth}
     \includegraphics[width=\textwidth, height=4cm]{./proj-org.png}
     \caption{Website as seen by browser/user}
@@ -192,8 +192,8 @@ Figure \ref{fig:cloak_eg} provides an example of cloaking as observed during our
     \caption{Response as seen by crawler}
     \label{fig:cloak}
   \end{subfigure}
-	\caption{An example of content cloaking, where the same URL returns different content for different visitor types. \ref{fig:org} is the result when a user clicks on the search result for ``buy viagra'' but takes the user to a Mattress selling website, while \ref{fig:cloak} is the result obtained by the crawler while visiting the same URL  receiving a keyword stuffed page.}
-	\label{fig:cloak_eg}
+	\caption{An example of content cloaking, where the same URL returns different content for different visitor types. \ref{fig:org} is the result when a user clicks on the search result for ``buy viagra'' but is taken to a Mattress selling website, while \ref{fig:cloak} is the response obtained by the crawler while visiting the same URL where it receives a keyword stuffed page.}
+    \label{fig:cloak_eg}
 \end{figure*}
 \end{document}
 
