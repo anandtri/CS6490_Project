@@ -5,6 +5,7 @@
 %\usepackage{color}
 \usepackage{graphicx}
 \usepackage{mathptmx}
+\usepackage{appendix}
 \usepackage{subcaption}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
@@ -91,7 +92,7 @@ Upon intercepting a web request, the browser plugin fetches the page content in 
 Upon receiving the results from the Classifier, the browser either lets the original web request go through, or warns the user that the URL requested is serving Cloaked Content and prompts the user to cancel the request and add the domain of the URL to its Blacklist. Since some websites employ cloaking to legitimately serve different contents on different types of devices and users, the plugin also allows an option to add domains to a Whitelist. The browser plugin will not block and inspect any request to any URL on the domains added in the Whitelist.
 
 \subsection{Crawler Proxy}
-The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect, the crawler extracts and follows the redirect URL provided.  If the page content includes simple javascript \texttt{onload} events, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the Classifier for analysis.
+The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers and the page body returned by the server resolved in the URL.  If the server returns HTTP redirect, the crawler extracts and follows the redirect URL provided.  If the page content includes simple javascript \texttt{onload} events, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the Classifier for analysis.
 
 \section{Implementation and Experimentation}
 
@@ -154,7 +155,7 @@ Figure \ref{fig:roc} plots the tradeoff our system achieves between true positiv
 \hline
 {\bf Accuracy} & {\bf TP} & {\bf FP}  & {\bf TN} & {\bf FN}\\
 \hline
-80\% & 100 \% & 10.4 \% &  89.6 \% & 0 \%\\
+91\% & 100 \% & 10.4 \% &  89.6 \% & 0 \%\\
 \hline
 \end{tabular}
 \end{center}
@@ -174,5 +175,26 @@ In future, we would like to use trained machine learning models for classificati
   \bibliographystyle{acm}
   \bibliography{biblio}
 }
+
+\appendixpage
+\appendix
+\section{Cloaking Example}
+Figure \ref{fig:cloak_eg} provides an example of cloaking as observed during our experiments. The URL {\it vivon[.]com/mattresses/spring-mattresses} showed random behavior when accessing it through the browser. Sometimes there was an addition redirection to a counterfeit online drug store.
+\begin{figure*}
+  \begin{subfigure}{0.5\textwidth}
+    \includegraphics[width=\textwidth, height=4cm]{./proj-org.png}
+    \caption{Website as seen by browser/user}
+    \label{fig:org}
+  \end{subfigure}
+  %
+  \begin{subfigure}{0.5\textwidth}
+    \includegraphics[width=\textwidth,height=4cm]{./proj-cloak.png}
+    \caption{Response as seen by crawler}
+    \label{fig:cloak}
+  \end{subfigure}
+	\caption{An example of content cloaking, where the same URL returns different content for different visitor types. \ref{fig:org} is the result when a user clicks on the search result for ``buy viagra'' but takes the user to a Mattress selling website, while \ref{fig:cloak} is the result obtained by the crawler while visiting the same URL  receiving a keyword stuffed page.}
+	\label{fig:cloak_eg}
+\end{figure*}
+\end{document}
 
 \end{document}
