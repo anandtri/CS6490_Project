@@ -52,7 +52,9 @@ The goal of this project is to investigate the possibility of detecting web cloa
 
 We started with the assumption that cloaked websites serve different content to browser and web crawler.  The browser calls the classifier module, passing it the content of the page.  The classifier makes a parallel crawler request. After retrieving the content from these requests, the classifier extracts the relevant content features and does a comparison~\cite{cloak} to identify any major differences.  Mismatches over a threshold will be detected as cloaking.  In either case, the classifier returns the detection result back to the browser.
 
-We obtained web sites to test from two sources: web search results and spam email.  These two sources showed divergent techniques for presenting users with web content.  Sites from spam email tended to hide behind HTTP redirect chains while sites from web searches used the form of cloaking previously described.  We wrote our components to extract redirection chains and to be able to classify both types of content hiding.
+%We obtained web sites to test from two sources: web search results and spam email.  These two sources showed divergent techniques for presenting users with web content.  Sites from spam email tended to hide behind HTTP redirect chains while sites from web searches used the form of cloaking previously described.  We wrote our components to extract redirection chains and to be able to classify both types of content hiding.
+
+In our evaluation, we compared known good sites against potentially cloaked ones. We noted a high prevalence of cloaking in search engine results for keyworks often found in spam advertising.  We further tuned our Classifier to minimize false positives while maximizing true positives in the process.
 
 \section{Related Work}
 Our work is mostly inspired by `Cloak of Visibility' by Invernizzi et al.\cite{cloak}. X Liao et al.\cite{liao2016lurking} do a comprehensive analysis of public cloud repositories to find out malicious cloud buckets that serve as gateways, content repositories or nodes in redirection based cloaking techniques. Part of their work focuses on identifying redirection based obfuscation based on the analysis of the entire redirection chain, which could be a most interesting addition to our own attempt at web cloak detection.
@@ -73,27 +75,28 @@ The general approach we take to detecting web cloaking is to fetch pages from mu
 
 \subsection{Browser Plugin}
 
-The browser plugin is modeled as a Chrome Browser Extension. It utilizes the Chrome Platform Javascript APIs to intercepts all webrequests from the browser, inspect Headers for HTTP redirects and block the request if required. A snapshot of this extension is shown in Figure \ref{fig:plugin}.
+The browser plugin is modeled as a Chrome Browser Extension. It utilizes the Chrome Platform Javascript APIs to intercepts all webrequests from the browser, inspect Headers for HTTP redirects and block the request if required.
+%A snapshot of this extension is shown in Figure \ref{fig:plugin}.
 
 %%%CHROME BROWSER EXTENSION
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.4\textwidth]{./proj_plugin.png}
-  \caption{Chrome Browser Extension Snapshot.}
-  \label{fig:plugin}
-\end{figure}
+%\begin{figure}[t]
+%  \centering
+%  \includegraphics[width=0.4\textwidth]{./proj_plugin.png}
+%  \caption{Chrome Browser Extension Snapshot.}
+%  \label{fig:plugin}
+%\end{figure}
 
-Upon intercepting a web request, the browser plugin fetches the page content in a parallel request and invokes the Classifier module. It provides the content of the web page requested to the Classifier module as part of this request. The plugin makes no assumptions about the location of the Classifier module and allows the user/app-developer to configure its location in the plugin as a destination IPaddress and port. The details of Cloak detection are completely abstracted away from the plugin. It completely relies on the Classifier module to do the job, including invoking the Crawler Proxy. It expects a binary yes or no result, along with a reason for the decision. This model would potentially allow easy updates to the backend modules, i.e. the Classifier and the Crawler Proxy modules, without affecting the user facing browser plugin component.
+Upon intercepting a web request, the browser plugin fetches the page content in a parallel request and invokes the Classifier module. It provides the content of the web page requested as part of this request. The plugin allows the user/app-developer to configure the location of the Classifier as a destination IP address and port. The details of Cloak detection are completely abstracted away from the plugin. It relies on the Classifier module to do the job, including invoking the Crawler Proxy. It expects a binary yes or no result, along with a reason for the decision. This model allows for easy updates to the backend modules, i.e. the Classifier and the Crawler Proxy modules, without affecting the user facing browser plugin component.
 
-Upon receiving the results from the Classifier, the browser either lets the original web request go through, or warns the user that the URL requested is serving Cloaked Content and prompts the user to cancel the request and add the domain of the URL to its Blacklist. Since some websites employ cloaking to legitimately serve different contents on different types of devices and users, the plugin also allows an option to add domains to a Whitelist, just in case the Classifier module classifies a legitimate cloaked URL as malicious. The browser plugin will not block and inspect any request to any URL on the domains added in the Whitelist.
+Upon receiving the results from the Classifier, the browser either lets the original web request go through, or warns the user that the URL requested is serving Cloaked Content and prompts the user to cancel the request and add the domain of the URL to its Blacklist. Since some websites employ cloaking to legitimately serve different contents on different types of devices and users, the plugin also allows an option to add domains to a Whitelist. The browser plugin will not block and inspect any request to any URL on the domains added in the Whitelist.
 
 \subsection{Crawler Proxy}
-The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect (code 301 - 310), the crawler extracts and follows the redirect URL provided.  If the page content includes straightforward code snippets that perform redirect based on the javascript \texttt{onload} event, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the caller for analysis.
+The crawler proxy operates as a stand-alone daemon that waits for incoming requests to fetch content.  When an incoming RPC asks for a particular URL, the crawler fetches the corresponding page, recording both HTTP headers andthe page body returned by the server resolved in the URL.  If the server returns HTTP redirect, the crawler extracts and follows the redirect URL provided.  If the page content includes simple javascript \texttt{onload} events, these are found, extracted, and followed as well.  The full sequence of headers and pages found are returned as a result stream to the Classifier for analysis.
 
 \section{Implementation and Experimentation}
 
 \subsection{Candidate URL selection}
-For our measurement, we collected URLs (Table \ref{tab:dataset}) from various sources including popular websites, Google search results, and spam emails. Our set of benign samples consisted of top 1000 websites in the Quantcast Top Million List ~\cite{quantcast}, all of which are assumed to be non-cloaked. We collected our blackhat dataset by extracting embedded URLs in spam emails, as well as, top results for Google search on popular terms (e.g. Viagra, cheap Rolex etc.) which are shown to be cloaked ~\cite{cloak, Wang:2011:CDD:2046707.2046763}. An emulated browser using Selenium ~\cite{selenium} was used for extracting search results and evaluation.
+For our measurements, we collected URLs (Table \ref{tab:dataset}) from various sources including popular websites, Google search results, and spam emails. Our set of benign samples consisted of top 1000 websites in the Quantcast Top Million List ~\cite{quantcast}, all of which are assumed to be non-cloaked. We collected our blackhat dataset by extracting embedded URLs in spam emails, as well as, top results for Google search on popular terms (e.g. ``Viagra'', ``cheap Rolex'', etc.) which are shown to be cloaked~\cite{cloak, Wang:2011:CDD:2046707.2046763}. An emulated browser using Selenium~\cite{selenium} was used for extracting search results and evaluation.
 
 \begin{table}
 \begin{center}
